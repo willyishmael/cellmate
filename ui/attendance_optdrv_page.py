@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
 from ui.period_dropdown import PeriodDropdown
 
-class AttendancePage(QWidget):
+class AttendanceOptDrvPage(QWidget):
     def __init__(self):
         super().__init__()
         main_layout = QHBoxLayout()
@@ -91,16 +91,14 @@ class AttendancePage(QWidget):
         form_layout.addRow("Row Counter Column:", self.create_field("Enter Row Counter Column Index (e.g., 3)"))
 
         self.sheet_names_text_edit = QTextEdit()
+        # Suggestion: Clarify placeholder text to indicate format
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
         self.sheet_names_text_edit.setFixedHeight(60)  # Set height to 60
         form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
 
-        # Add text edit for ignore list (Employee IDs)
-        self.employee_ids_text_edit = QTextEdit()
-        # Suggestion: Clarify placeholder text to indicate format
-        self.employee_ids_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.employee_ids_text_edit.setFixedHeight(60)  # Set height to 60
-        form_layout.addRow("Ignore List:", self.employee_ids_text_edit)
+        # Add "Time Off Only?" checkbox
+        self.checkbox_time_off_only = QCheckBox("Time Off Only?")
+        form_layout.addRow("", self.checkbox_time_off_only)
 
         right_panel.addLayout(form_layout)
 

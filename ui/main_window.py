@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 
 from ui.attendance_page import AttendancePage
 from ui.overtime_page import OvertimePage
+from ui.attendance_optdrv_page import AttendanceOptDrvPage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
         # Placeholder pages
         self.attendance_page = AttendancePage()
         self.overtime_page = OvertimePage()
-        self.attendance_optdrv_page = QWidget()
+        self.attendance_optdrv_page = AttendanceOptDrvPage()
         self.overtime_optdrv_page = QWidget()
         self.templates_page = QWidget()
         self.app_info_page = QWidget()
