@@ -13,6 +13,7 @@ class TemplatePage(QWidget):
         super().__init__()
         self.setWindowTitle("Template Management")
         layout = QVBoxLayout()
+        
 
         # ViewModel
         self.vm = TemplateViewModel()
@@ -22,6 +23,20 @@ class TemplatePage(QWidget):
         title.setStyleSheet("font-weight: bold; font-size: 18px;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
+
+        # Titles for table and editor
+        titles_layout = QHBoxLayout()
+        table_title = QLabel("Templates List")
+        table_title.setAlignment(Qt.AlignCenter)
+        table_title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        editor_title = QLabel("Review")
+        editor_title.setAlignment(Qt.AlignCenter)
+        editor_title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        titles_layout.addWidget(table_title, 2)
+        titles_layout.addWidget(editor_title, 3)
+        layout.addLayout(titles_layout)
+
+        editor_layout = QHBoxLayout()
 
         # Table of templates with headers
         self.template_table = QTableWidget()
@@ -34,12 +49,14 @@ class TemplatePage(QWidget):
         self.template_table.horizontalHeader().setStretchLastSection(True)
         self.template_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.template_table.cellClicked.connect(self.display_template)
-        layout.addWidget(self.template_table)
+        editor_layout.addWidget(self.template_table)
 
         # Template details view
         self.template_details = QTextEdit()
         self.template_details.setReadOnly(True)
-        layout.addWidget(self.template_details)
+        editor_layout.addWidget(self.template_details)
+
+        layout.addLayout(editor_layout)
 
         # Buttons
         btn_layout = QHBoxLayout()
