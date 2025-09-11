@@ -1,0 +1,32 @@
+{
+  "templates": [
+    {
+      "name": "PLANT",
+      "template_type": "attendance",
+      "settings": {
+        "employee_id_col": 2,
+        "employee_name_col": 3,
+        "date_col": 4,
+        "time_in_col": 5,
+        "time_out_col": 6,
+        "date_format": "DD/MM/YYYY",
+        "timezone": "Asia/Jakarta",
+        "department_col": 7
+      }
+    },
+    {
+      "name": "Overtime - Plant 1",
+      "template_type": "overtime",
+      "settings": {
+        "employee_id_col": 1,
+        "employee_name_col": 2,
+        "date_col": 3,
+        "overtime_hours_col": 8,
+        "approved_by_col": 9,
+        "date_format": "YYYY-MM-DD",
+        "min_overtime": 2.0,
+        "department_col": 4
+      }
+    }
+  ]
+}
