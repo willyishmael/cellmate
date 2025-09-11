@@ -5,51 +5,48 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
+
 from ui.period_dropdown import PeriodDropdown
+from view_model.template_view_model import TemplateViewModel
 
 class AttendancePage(QWidget):
     def __init__(self):
         super().__init__()
+        self.vm = TemplateViewModel()
+        self.current_template_index = None
         main_layout = QHBoxLayout()
 
         # Left panel with two drop areas
         left_panel = QVBoxLayout()
-
         self.drop_area_1 = DropArea("Drop Attendance Excel File Here")
         self.drop_area_2 = DropArea("Drop HRIS Export Excel File Here")
-
-        left_panel.addWidget(self.drop_area_1, 1)  # stretch factor = 1
-        left_panel.addWidget(self.drop_area_2, 1)  # stretch factor = 1
-
-        main_layout.addLayout(left_panel, 2)  # stretch factor = 2
+        left_panel.addWidget(self.drop_area_1, 1)
+        left_panel.addWidget(self.drop_area_2, 1)
+        main_layout.addLayout(left_panel, 2)
 
         # Right panel (settings)
         right_panel = QVBoxLayout()
-
         self.setting_label = QLabel("⚙ Settings")
         self.setting_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         right_panel.addWidget(self.setting_label)
 
-        # 🔹 Template selection bar (dropdown + buttons)
+        # Template selection bar
         template_bar = QHBoxLayout()
-
         self.template_dropdown = QComboBox()
-        self.template_dropdown.addItem("Select Template")  # default placeholder
-        template_bar.addWidget(self.template_dropdown, 3)  # stretch factor = 3
-
+        self.template_dropdown.addItem("Select Template")
+        self.template_dropdown.currentIndexChanged.connect(self.on_template_selected)
+        template_bar.addWidget(self.template_dropdown, 3)
         self.btn_save = QPushButton("💾 Save")
         self.btn_new = QPushButton("➕ New")
         self.btn_delete = QPushButton("🗑 Delete")
-
         template_bar.addWidget(self.btn_save, 1)
         template_bar.addWidget(self.btn_new, 1)
         template_bar.addWidget(self.btn_delete, 1)
-
         right_panel.addLayout(template_bar)
 
         # Form layout for labeled fields
         form_layout = QFormLayout()
-        form_layout.setLabelAlignment(Qt.AlignRight)  # Labels aligned neatly on right
+        form_layout.setLabelAlignment(Qt.AlignRight)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         form_layout.setFormAlignment(Qt.AlignTop)
         form_layout.setHorizontalSpacing(15)
@@ -57,7 +54,7 @@ class AttendancePage(QWidget):
 
         # Add period dropdown
         self.period_dropdown = PeriodDropdown()
-        self.period_dropdown.setFixedHeight(28)  # Set height to 28
+        self.period_dropdown.setFixedHeight(28)
         form_layout.addRow("Period:", self.period_dropdown)
 
         # Add date pickers for start and end dates
@@ -65,10 +62,8 @@ class AttendancePage(QWidget):
         self.end_date_picker = QDateEdit()
         self.configure_date_picker(self.start_date_picker)
         self.configure_date_picker(self.end_date_picker)
-
-        self.start_date_picker.setFixedHeight(28)  # Set height to 28
-        self.end_date_picker.setFixedHeight(28)  # Set height to 28
-
+        self.start_date_picker.setFixedHeight(28)
+        self.end_date_picker.setFixedHeight(28)
         form_layout.addRow("Start Date:", self.start_date_picker)
         form_layout.addRow("End Date:", self.end_date_picker)
 
@@ -92,39 +87,88 @@ class AttendancePage(QWidget):
 
         self.sheet_names_text_edit = QTextEdit()
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
-        self.sheet_names_text_edit.setFixedHeight(60)  # Set height to 60
+        self.sheet_names_text_edit.setFixedHeight(60)
         form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
 
-        # Add text edit for ignore list (Employee IDs)
         self.employee_ids_text_edit = QTextEdit()
-        # Suggestion: Clarify placeholder text to indicate format
         self.employee_ids_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.employee_ids_text_edit.setFixedHeight(60)  # Set height to 60
+        self.employee_ids_text_edit.setFixedHeight(60)
         form_layout.addRow("Ignore List:", self.employee_ids_text_edit)
 
         right_panel.addLayout(form_layout)
-
-        # Add spacer so button goes to bottom
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-        # Action button
         btn_extract = QPushButton("📊 Extract Data")
         btn_compare = QPushButton("🔍 Compare Data")
         btn_extract.setFixedHeight(40)
         btn_compare.setFixedHeight(40)
         right_panel.addWidget(btn_extract)
         right_panel.addWidget(btn_compare)
-
-        # Add right panel to main layout
-        main_layout.addLayout(right_panel, 3)  # stretch factor = 3
+        main_layout.addLayout(right_panel, 3)
 
         self.setLayout(main_layout)
+        self.load_templates_to_dropdown()
+        
+    def load_templates_to_dropdown(self):
+        self.template_dropdown.blockSignals(True)
+        self.template_dropdown.clear()
+        self.template_dropdown.addItem("Select Template")
+        self.attendance_templates = self.vm.get_templates(template_type="attendance")
+        for t in self.attendance_templates:
+            self.template_dropdown.addItem(t.name)
+        self.template_dropdown.blockSignals(False)
+
+    def on_template_selected(self, index):
+        if index <= 0:
+            self.current_template_index = None
+            self.clear_settings_fields()
+            return
+        self.current_template_index = index - 1
+        template = self.attendance_templates[self.current_template_index]
+        self.load_settings_to_fields(template.settings)
+
+    def clear_settings_fields(self):
+        # Clear all form fields (implement as needed)
+        self.period_dropdown.setCurrentIndex(0)
+        self.start_date_picker.setDate(QDate.currentDate().addDays(-1))
+        self.end_date_picker.setDate(QDate.currentDate().addDays(-1))
+        self.checkbox_pm.setChecked(False)
+        self.checkbox_ptm.setChecked(False)
+        self.checkbox_tmp.setChecked(False)
+        # Assuming fields are in order as created
+        for i in range(6):
+            field = self.findChild(QLineEdit, f"field_{i}")
+            if field:
+                field.clear()
+        self.sheet_names_text_edit.clear()
+        self.employee_ids_text_edit.clear()
+
+    def load_settings_to_fields(self, settings):
+        # Set form fields from settings dict
+        self.period_dropdown.setCurrentText(settings.get("period", ""))
+        self.start_date_picker.setDate(QDate.fromString(settings.get("start_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
+        self.end_date_picker.setDate(QDate.fromString(settings.get("end_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
+        self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
+        self.checkbox_ptm.setChecked(settings.get("company_codes", {}).get("PTM", False))
+        self.checkbox_tmp.setChecked(settings.get("company_codes", {}).get("TMP", False))
+        # Set QLineEdit fields
+        for i, key in enumerate(["employee_id_col", "employee_name_col", "company_code_col", "data_start_row", "date_header_row", "row_counter_col"]):
+            field = self.findChild(QLineEdit, f"field_{i}")
+            if field:
+                field.setText(str(settings.get(key, "")))
+        self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
+        self.employee_ids_text_edit.setPlainText(settings.get("ignore_list", ""))
 
     def create_field(self, placeholder):
         """Helper method to create a plain input field for QFormLayout."""
         field = QLineEdit()
         field.setPlaceholderText(placeholder)
         field.setFixedHeight(28)
+        # Give each field a unique object name for easy lookup
+        if not hasattr(self, '_field_count'):
+            self._field_count = 0
+        field.setObjectName(f"field_{self._field_count}")
+        self._field_count += 1
         return field
 
     def configure_date_picker(self, date_picker):
