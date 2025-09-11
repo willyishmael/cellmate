@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
 from ui.period_dropdown import PeriodDropdown
 
-class AttendancePage(QWidget):
+class OvertimeOptDrvPage(QWidget):
     def __init__(self):
         super().__init__()
         main_layout = QHBoxLayout()
@@ -72,6 +72,7 @@ class AttendancePage(QWidget):
         form_layout.addRow("Start Date:", self.start_date_picker)
         form_layout.addRow("End Date:", self.end_date_picker)
 
+        # Add fields for user input
         company_codes_layout = QHBoxLayout()
         company_codes_layout.setAlignment(Qt.AlignLeft)
         self.checkbox_pm = QCheckBox("PM")
@@ -81,26 +82,19 @@ class AttendancePage(QWidget):
         company_codes_layout.addWidget(self.checkbox_ptm)
         company_codes_layout.addWidget(self.checkbox_tmp)
         form_layout.addRow("Company Codes:", company_codes_layout)
-
-        # Add fields for user input
+        
         form_layout.addRow("Employee ID Column:", self.create_field("Enter Employee ID Column Index (e.g., 5)"))
         form_layout.addRow("Employee Name Column:", self.create_field("Enter Employee Name Column Index (e.g., 6)"))
         form_layout.addRow("Company Code Column:", self.create_field("Enter Company Code Column Index (e.g., 7)"))
         form_layout.addRow("Data Start Row:", self.create_field("Enter Data Start Row Index (e.g., 2)"))
         form_layout.addRow("Date Header Row:", self.create_field("Enter Date Header Row Index (e.g., 1)"))
-        form_layout.addRow("Row Counter Column:", self.create_field("Enter Row Counter Column Index (e.g., 3)"))
+        form_layout.addRow("Row Counter Column:", self.create_field("Enter Row Counter Column Index (e.g., 1)"))
 
+        # Add text edit for sheet names
         self.sheet_names_text_edit = QTextEdit()
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
         self.sheet_names_text_edit.setFixedHeight(60)  # Set height to 60
         form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
-
-        # Add text edit for ignore list (Employee IDs)
-        self.employee_ids_text_edit = QTextEdit()
-        # Suggestion: Clarify placeholder text to indicate format
-        self.employee_ids_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.employee_ids_text_edit.setFixedHeight(60)  # Set height to 60
-        form_layout.addRow("Ignore List:", self.employee_ids_text_edit)
 
         right_panel.addLayout(form_layout)
 
