@@ -3,8 +3,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout
 )
 
-from PySide6.QtCore import Qt
 from ui.attendance_page import AttendancePage
+from ui.overtime_page import OvertimePage
+from ui.attendance_optdrv_page import AttendanceOptDrvPage
+from ui.overtime_optdrv_page import OvertimeOptDrvPage
+from ui.template_page import TemplatePage
+from ui.app_info_page import AppInfoPage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,11 +21,11 @@ class MainWindow(QMainWindow):
 
         # Placeholder pages
         self.attendance_page = AttendancePage()
-        self.overtime_page = QWidget()
-        self.attendance_optdrv_page = QWidget()
-        self.overtime_optdrv_page = QWidget()
-        self.templates_page = QWidget()
-        self.app_info_page = QWidget()
+        self.overtime_page = OvertimePage()
+        self.attendance_optdrv_page = AttendanceOptDrvPage()
+        self.overtime_optdrv_page = OvertimeOptDrvPage()
+        self.templates_page = TemplatePage()
+        self.app_info_page = AppInfoPage()
 
         self.stacked.addWidget(self.attendance_page)  # index 0
         self.stacked.addWidget(self.overtime_page)    # index 1
