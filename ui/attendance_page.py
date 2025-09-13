@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
-    QPushButton, QSpacerItem, QSizePolicy, QComboBox, QFormLayout,
-    QLineEdit, QCheckBox, QDateEdit, QTextEdit
+    QSpacerItem, QSizePolicy, QFormLayout,
+    QLineEdit, QCheckBox, QTextEdit ,QPushButton
 )
 from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
-
-from ui.period_dropdown import PeriodDropdown
+from ui.template_bar import TemplateBar
+from ui.period_date_widget import PeriodDateWidget
 from view_model.template_view_model import TemplateViewModel
 
 class AttendancePage(QWidget):
@@ -30,21 +30,17 @@ class AttendancePage(QWidget):
         self.setting_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         right_panel.addWidget(self.setting_label)
 
-        # Template selection bar
-        template_bar = QHBoxLayout()
-        self.template_dropdown = QComboBox()
-        self.template_dropdown.addItem("Select Template")
-        self.template_dropdown.currentIndexChanged.connect(self.on_template_selected)
-        template_bar.addWidget(self.template_dropdown, 3)
-        self.btn_save = QPushButton("💾 Save")
-        self.btn_new = QPushButton("➕ New")
-        self.btn_delete = QPushButton("🗑 Delete")
-        template_bar.addWidget(self.btn_save, 1)
-        template_bar.addWidget(self.btn_new, 1)
-        template_bar.addWidget(self.btn_delete, 1)
-        right_panel.addLayout(template_bar)
+        # Template selection bar (refactored)
+        self.template_bar = TemplateBar(self.on_template_selected)
+        # Wrap TemplateBar (QHBoxLayout) in QWidget for addLayout compatibility
+        template_bar_widget = QWidget()
+        template_bar_widget.setLayout(self.template_bar)
+        right_panel.addWidget(template_bar_widget)
 
-        # Form layout for labeled fields
+        # Period and Start/End Date section (refactored)
+        self.period_date_widget = PeriodDateWidget()
+
+        # Continue with the rest of the form
         form_layout = QFormLayout()
         form_layout.setLabelAlignment(Qt.AlignRight)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
@@ -52,23 +48,10 @@ class AttendancePage(QWidget):
         form_layout.setHorizontalSpacing(15)
         form_layout.setVerticalSpacing(15)
 
-        # Add period dropdown
-        self.period_dropdown = PeriodDropdown()
-        self.period_dropdown.setFixedHeight(28)
-        form_layout.addRow("Period:", self.period_dropdown)
-
-        # Add date pickers for start and end dates
-        self.start_date_picker = QDateEdit()
-        self.end_date_picker = QDateEdit()
-        self.configure_date_picker(self.start_date_picker)
-        self.configure_date_picker(self.end_date_picker)
-        self.start_date_picker.setFixedHeight(28)
-        self.end_date_picker.setFixedHeight(28)
-        form_layout.addRow("Start Date:", self.start_date_picker)
-        form_layout.addRow("End Date:", self.end_date_picker)
+        # Add period/date widget as a row
+        form_layout.addRow(self.period_date_widget)
 
         company_codes_layout = QHBoxLayout()
-        company_codes_layout.setAlignment(Qt.AlignLeft)
         self.checkbox_pm = QCheckBox("PM")
         self.checkbox_ptm = QCheckBox("PTM")
         self.checkbox_tmp = QCheckBox("TMP")
@@ -77,7 +60,6 @@ class AttendancePage(QWidget):
         company_codes_layout.addWidget(self.checkbox_tmp)
         form_layout.addRow("Company Codes:", company_codes_layout)
 
-        # Add fields for user input
         form_layout.addRow("Employee ID Column:", self.create_field("Enter Employee ID Column Index (e.g., 5)"))
         form_layout.addRow("Employee Name Column:", self.create_field("Enter Employee Name Column Index (e.g., 6)"))
         form_layout.addRow("Company Code Column:", self.create_field("Enter Company Code Column Index (e.g., 7)"))
@@ -110,13 +92,14 @@ class AttendancePage(QWidget):
         self.load_templates_to_dropdown()
         
     def load_templates_to_dropdown(self):
-        self.template_dropdown.blockSignals(True)
-        self.template_dropdown.clear()
-        self.template_dropdown.addItem("Select Template")
+        dropdown = self.template_bar.template_dropdown
+        dropdown.blockSignals(True)
+        dropdown.clear()
+        dropdown.addItem("Select Template")
         self.attendance_templates = self.vm.get_templates(template_type="attendance")
         for t in self.attendance_templates:
-            self.template_dropdown.addItem(t.name)
-        self.template_dropdown.blockSignals(False)
+            dropdown.addItem(t.name)
+        dropdown.blockSignals(False)
 
     def on_template_selected(self, index):
         if index <= 0:
