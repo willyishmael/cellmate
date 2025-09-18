@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QSpacerItem, QSizePolicy, QFormLayout,
     QLineEdit, QCheckBox, QTextEdit ,QPushButton
 )
+
 from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
 from ui.template_bar import TemplateBar
@@ -32,6 +33,9 @@ class AttendancePage(QWidget):
 
         # Template selection bar (refactored)
         self.template_bar = TemplateBar(self.on_template_selected)
+        self.template_bar.btn_save.clicked.connect(self.on_save_template)
+        self.template_bar.btn_new.clicked.connect(self.on_new_template)
+        
         # Wrap TemplateBar (QHBoxLayout) in QWidget for addLayout compatibility
         template_bar_widget = QWidget()
         template_bar_widget.setLayout(self.template_bar)
@@ -91,6 +95,67 @@ class AttendancePage(QWidget):
         self.setLayout(main_layout)
         self.load_templates_to_dropdown()
         
+    # 
+    def on_template_selected(self, index):
+        if index <= 0:
+            self.current_template_index = None
+            self.clear_settings_fields()
+            return
+        
+        
+        self.current_template_index = index - 1
+        template = self.attendance_templates[self.current_template_index]
+        self.load_settings_to_fields(template.settings)    
+
+    def on_save_template(self):
+        # Save/update the currently selected template with current form values
+        dropdown = self.template_bar.template_dropdown
+        index = dropdown.currentIndex()
+        if index <= 0 or self.current_template_index is None:
+            # No template selected
+            return
+        name = dropdown.currentText()
+        settings = self.collect_settings_from_fields()
+        self.vm.update_template(self.current_template_index, name=name, template_type="attendance", settings=settings)
+        self.load_templates_to_dropdown()
+        dropdown.setCurrentIndex(index)
+
+    def on_new_template(self):
+        # Create a new template from current form values
+        dropdown = self.template_bar.template_dropdown
+        name = dropdown.currentText()
+        if not name or name == "Select Template":
+            # Optionally prompt for a name here
+            return
+        settings = self.collect_settings_from_fields()
+        self.vm.add_template(name, "attendance", settings)
+        self.load_templates_to_dropdown()
+        # Optionally select the new template
+
+    def collect_settings_from_fields(self):
+        # Gather all form field values into a settings dict
+        settings = {}
+        # Period and dates
+        settings["period"] = self.period_date_widget.period_dropdown.currentText()
+        settings["start_date"] = self.period_date_widget.start_date_picker.date().toString("yyyy-MM-dd")
+        settings["end_date"] = self.period_date_widget.end_date_picker.date().toString("yyyy-MM-dd")
+        # Company codes
+        settings["company_codes"] = {
+            "PM": self.checkbox_pm.isChecked(),
+            "PTM": self.checkbox_ptm.isChecked(),
+            "TMP": self.checkbox_tmp.isChecked(),
+        }
+        # QLineEdit fields
+        keys = ["employee_id_col", "employee_name_col", "company_code_col", "data_start_row", "date_header_row", "row_counter_col"]
+        for i, key in enumerate(keys):
+            field = self.findChild(QLineEdit, f"field_{i}")
+            if field:
+                settings[key] = field.text()
+        # Sheet names and ignore list
+        settings["sheet_names"] = self.sheet_names_text_edit.toPlainText()
+        settings["ignore_list"] = self.employee_ids_text_edit.toPlainText()
+        return settings
+    
     def load_templates_to_dropdown(self):
         dropdown = self.template_bar.template_dropdown
         dropdown.blockSignals(True)
@@ -101,14 +166,7 @@ class AttendancePage(QWidget):
             dropdown.addItem(t.name)
         dropdown.blockSignals(False)
 
-    def on_template_selected(self, index):
-        if index <= 0:
-            self.current_template_index = None
-            self.clear_settings_fields()
-            return
-        self.current_template_index = index - 1
-        template = self.attendance_templates[self.current_template_index]
-        self.load_settings_to_fields(template.settings)
+
 
     def clear_settings_fields(self):
         # Clear all form fields (implement as needed)
@@ -128,7 +186,7 @@ class AttendancePage(QWidget):
 
     def load_settings_to_fields(self, settings):
         # Set form fields from settings dict
-        self.period_dropdown.setCurrentText(settings.get("period", ""))
+        self.period_date_widget.period_dropdown.setCurrentText(settings.get("period", ""))
         self.start_date_picker.setDate(QDate.fromString(settings.get("start_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
         self.end_date_picker.setDate(QDate.fromString(settings.get("end_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
         self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
