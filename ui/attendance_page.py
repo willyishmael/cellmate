@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
     QSpacerItem, QSizePolicy, QFormLayout,
-    QLineEdit, QCheckBox, QTextEdit ,QPushButton
+    QLineEdit, QCheckBox, QTextEdit ,QPushButton,
+    QInputDialog, QMessageBox
 )
 
 from PySide6.QtCore import Qt, QDate
@@ -64,22 +65,29 @@ class AttendancePage(QWidget):
         company_codes_layout.addWidget(self.checkbox_tmp)
         form_layout.addRow("Company Codes:", company_codes_layout)
 
-        form_layout.addRow("Employee ID Column:", self.create_field("Enter Employee ID Column Index (e.g., 5)"))
-        form_layout.addRow("Employee Name Column:", self.create_field("Enter Employee Name Column Index (e.g., 6)"))
-        form_layout.addRow("Company Code Column:", self.create_field("Enter Company Code Column Index (e.g., 7)"))
-        form_layout.addRow("Data Start Row:", self.create_field("Enter Data Start Row Index (e.g., 2)"))
-        form_layout.addRow("Date Header Row:", self.create_field("Enter Date Header Row Index (e.g., 1)"))
-        form_layout.addRow("Row Counter Column:", self.create_field("Enter Row Counter Column Index (e.g., 3)"))
+        # Create and store references to QLineEdit fields
+        self.field_employee_id_col = self.create_field("Enter Employee ID Column Index (e.g., 5)")
+        self.field_employee_name_col = self.create_field("Enter Employee Name Column Index (e.g., 6)")
+        self.field_company_code_col = self.create_field("Enter Company Code Column Index (e.g., 7)")
+        self.field_data_start_row = self.create_field("Enter Data Start Row Index (e.g., 2)")
+        self.field_date_header_row = self.create_field("Enter Date Header Row Index (e.g., 1)")
+        self.field_row_counter_col = self.create_field("Enter Row Counter Column Index (e.g., 3)")
+        form_layout.addRow("Employee ID Column:", self.field_employee_id_col)
+        form_layout.addRow("Employee Name Column:", self.field_employee_name_col)
+        form_layout.addRow("Company Code Column:", self.field_company_code_col)
+        form_layout.addRow("Data Start Row:", self.field_data_start_row)
+        form_layout.addRow("Date Header Row:", self.field_date_header_row)
+        form_layout.addRow("Row Counter Column:", self.field_row_counter_col)
 
         self.sheet_names_text_edit = QTextEdit()
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
         self.sheet_names_text_edit.setFixedHeight(60)
         form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
 
-        self.employee_ids_text_edit = QTextEdit()
-        self.employee_ids_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.employee_ids_text_edit.setFixedHeight(60)
-        form_layout.addRow("Ignore List:", self.employee_ids_text_edit)
+        self.ignore_list_text_edit = QTextEdit()
+        self.ignore_list_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
+        self.ignore_list_text_edit.setFixedHeight(60)
+        form_layout.addRow("Ignore List:", self.ignore_list_text_edit)
 
         right_panel.addLayout(form_layout)
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
@@ -95,45 +103,79 @@ class AttendancePage(QWidget):
         self.setLayout(main_layout)
         self.load_templates_to_dropdown()
         
-    # 
+    # Handle template selection
     def on_template_selected(self, index):
         if index <= 0:
             self.current_template_index = None
             self.clear_settings_fields()
             return
         
-        
+        # Load selected template settings into form fields
         self.current_template_index = index - 1
         template = self.attendance_templates[self.current_template_index]
         self.load_settings_to_fields(template.settings)    
 
+    # Load settings dict into form fields
+    def load_settings_to_fields(self, settings):
+        
+        # Set form fields from settings dict
+        self.period_date_widget.period_dropdown.setCurrentText(settings.get("period", ""))
+        self.period_date_widget.start_date_picker.setDate(QDate.fromString(settings.get("start_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
+        self.period_date_widget.end_date_picker.setDate(QDate.fromString(settings.get("end_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
+        self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
+        self.checkbox_ptm.setChecked(settings.get("company_codes", {}).get("PTM", False))
+        self.checkbox_tmp.setChecked(settings.get("company_codes", {}).get("TMP", False))
+        
+        # Set QLineEdit fields
+        self.field_employee_id_col.setText(str(settings.get("employee_id_col", "")))
+        self.field_employee_name_col.setText(str(settings.get("employee_name_col", "")))
+        self.field_company_code_col.setText(str(settings.get("company_code_col", "")))
+        self.field_data_start_row.setText(str(settings.get("data_start_row", "")))
+        self.field_date_header_row.setText(str(settings.get("date_header_row", "")))
+        self.field_row_counter_col.setText(str(settings.get("row_counter_col", "")))
+        self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
+        self.ignore_list_text_edit.setPlainText(settings.get("ignore_list", ""))
+
+    # Save current form values to the selected template
     def on_save_template(self):
-        # Save/update the currently selected template with current form values
         dropdown = self.template_bar.template_dropdown
         index = dropdown.currentIndex()
         if index <= 0 or self.current_template_index is None:
-            # No template selected
             return
+        
         name = dropdown.currentText()
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Overwrite",
+            f"Are you sure you want to overwrite the template '{name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if confirm != QMessageBox.Yes:
+            return
+
         settings = self.collect_settings_from_fields()
         self.vm.update_template(self.current_template_index, name=name, template_type="attendance", settings=settings)
         self.load_templates_to_dropdown()
         dropdown.setCurrentIndex(index)
 
+    # Create a new template from current form values
     def on_new_template(self):
-        # Create a new template from current form values
-        dropdown = self.template_bar.template_dropdown
-        name = dropdown.currentText()
-        if not name or name == "Select Template":
-            # Optionally prompt for a name here
+        name, ok = QInputDialog.getText(self, "New Template", "Enter template name:")
+        if not ok or not name.strip():
             return
         settings = self.collect_settings_from_fields()
-        self.vm.add_template(name, "attendance", settings)
+        self.vm.add_template(name.strip(), "attendance", settings)
         self.load_templates_to_dropdown()
-        # Optionally select the new template
+        # Optionally select the new template in dropdown
+        dropdown = self.template_bar.template_dropdown
+        for i in range(dropdown.count()):
+            if dropdown.itemText(i) == name.strip():
+                dropdown.setCurrentIndex(i)
+                break
 
+    # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
-        # Gather all form field values into a settings dict
         settings = {}
         # Period and dates
         settings["period"] = self.period_date_widget.period_dropdown.currentText()
@@ -145,17 +187,19 @@ class AttendancePage(QWidget):
             "PTM": self.checkbox_ptm.isChecked(),
             "TMP": self.checkbox_tmp.isChecked(),
         }
-        # QLineEdit fields
-        keys = ["employee_id_col", "employee_name_col", "company_code_col", "data_start_row", "date_header_row", "row_counter_col"]
-        for i, key in enumerate(keys):
-            field = self.findChild(QLineEdit, f"field_{i}")
-            if field:
-                settings[key] = field.text()
+        # QLineEdit fields (direct extraction)
+        settings["employee_id_col"] = self.field_employee_id_col.text()
+        settings["employee_name_col"] = self.field_employee_name_col.text()
+        settings["company_code_col"] = self.field_company_code_col.text()
+        settings["data_start_row"] = self.field_data_start_row.text()
+        settings["date_header_row"] = self.field_date_header_row.text()
+        settings["row_counter_col"] = self.field_row_counter_col.text()
         # Sheet names and ignore list
         settings["sheet_names"] = self.sheet_names_text_edit.toPlainText()
-        settings["ignore_list"] = self.employee_ids_text_edit.toPlainText()
+        settings["ignore_list"] = self.ignore_list_text_edit.toPlainText()
         return settings
     
+    # Load templates from ViewModel into dropdown
     def load_templates_to_dropdown(self):
         dropdown = self.template_bar.template_dropdown
         dropdown.blockSignals(True)
@@ -166,40 +210,27 @@ class AttendancePage(QWidget):
             dropdown.addItem(t.name)
         dropdown.blockSignals(False)
 
-
-
     def clear_settings_fields(self):
+        
         # Clear all form fields (implement as needed)
-        self.period_dropdown.setCurrentIndex(0)
-        self.start_date_picker.setDate(QDate.currentDate().addDays(-1))
-        self.end_date_picker.setDate(QDate.currentDate().addDays(-1))
+        self.period_date_widget.period_dropdown.setCurrentIndex(0)
+        self.period_date_widget.start_date_picker.setDate(QDate.currentDate().addDays(-1))
+        self.period_date_widget.end_date_picker.setDate(QDate.currentDate().addDays(-1))
         self.checkbox_pm.setChecked(False)
         self.checkbox_ptm.setChecked(False)
         self.checkbox_tmp.setChecked(False)
+        
         # Assuming fields are in order as created
-        for i in range(6):
-            field = self.findChild(QLineEdit, f"field_{i}")
-            if field:
-                field.clear()
+        self.field_employee_id_col.clear()
+        self.field_employee_name_col.clear()
+        self.field_company_code_col.clear()
+        self.field_data_start_row.clear()
+        self.field_date_header_row.clear()
+        self.field_row_counter_col.clear()
         self.sheet_names_text_edit.clear()
-        self.employee_ids_text_edit.clear()
+        self.ignore_list_text_edit.clear()
 
-    def load_settings_to_fields(self, settings):
-        # Set form fields from settings dict
-        self.period_date_widget.period_dropdown.setCurrentText(settings.get("period", ""))
-        self.start_date_picker.setDate(QDate.fromString(settings.get("start_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
-        self.end_date_picker.setDate(QDate.fromString(settings.get("end_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
-        self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
-        self.checkbox_ptm.setChecked(settings.get("company_codes", {}).get("PTM", False))
-        self.checkbox_tmp.setChecked(settings.get("company_codes", {}).get("TMP", False))
-        # Set QLineEdit fields
-        for i, key in enumerate(["employee_id_col", "employee_name_col", "company_code_col", "data_start_row", "date_header_row", "row_counter_col"]):
-            field = self.findChild(QLineEdit, f"field_{i}")
-            if field:
-                field.setText(str(settings.get(key, "")))
-        self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
-        self.employee_ids_text_edit.setPlainText(settings.get("ignore_list", ""))
-
+    # Helper method to create QLineEdit fields
     def create_field(self, placeholder):
         """Helper method to create a plain input field for QFormLayout."""
         field = QLineEdit()
@@ -212,6 +243,7 @@ class AttendancePage(QWidget):
         self._field_count += 1
         return field
 
+    # Refactored method to configure date pickers
     def configure_date_picker(self, date_picker):
         """Configure a date picker to default to yesterday's date."""
         yesterday = QDate.currentDate().addDays(-1)
