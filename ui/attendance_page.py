@@ -118,10 +118,6 @@ class AttendancePage(QWidget):
     # Load settings dict into form fields
     def load_settings_to_fields(self, settings):
         
-        # Set form fields from settings dict
-        self.period_date_widget.period_dropdown.setCurrentText(settings.get("period", ""))
-        self.period_date_widget.start_date_picker.setDate(QDate.fromString(settings.get("start_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
-        self.period_date_widget.end_date_picker.setDate(QDate.fromString(settings.get("end_date", QDate.currentDate().addDays(-1).toString("yyyy-MM-dd")), "yyyy-MM-dd"))
         self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
         self.checkbox_ptm.setChecked(settings.get("company_codes", {}).get("PTM", False))
         self.checkbox_tmp.setChecked(settings.get("company_codes", {}).get("TMP", False))
@@ -177,10 +173,7 @@ class AttendancePage(QWidget):
     # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
         settings = {}
-        # Period and dates
-        settings["period"] = self.period_date_widget.period_dropdown.currentText()
-        settings["start_date"] = self.period_date_widget.start_date_picker.date().toString("yyyy-MM-dd")
-        settings["end_date"] = self.period_date_widget.end_date_picker.date().toString("yyyy-MM-dd")
+        
         # Company codes
         settings["company_codes"] = {
             "PM": self.checkbox_pm.isChecked(),
@@ -212,10 +205,6 @@ class AttendancePage(QWidget):
 
     def clear_settings_fields(self):
         
-        # Clear all form fields (implement as needed)
-        self.period_date_widget.period_dropdown.setCurrentIndex(0)
-        self.period_date_widget.start_date_picker.setDate(QDate.currentDate().addDays(-1))
-        self.period_date_widget.end_date_picker.setDate(QDate.currentDate().addDays(-1))
         self.checkbox_pm.setChecked(False)
         self.checkbox_ptm.setChecked(False)
         self.checkbox_tmp.setChecked(False)
