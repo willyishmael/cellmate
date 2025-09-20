@@ -22,20 +22,37 @@ class Template:
             'settings': self.settings
         }
 
-class TemplateContainer:
-    def __init__(self):
-        self.templates: List[Template] = []
+# Utility methods for Template list <-> JSON file
+class TemplateUtils:
+    TEMPLATE_FILE = "data/templates.json"
+    @staticmethod
+    def load_templates_from_file(path: str = None) -> List[Template]:
+        """Load templates from JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        if path is None:
+            path = TemplateUtils.TEMPLATE_FILE
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if isinstance(data, dict) and 'templates' in data:
+                data = data['templates']
+            return [Template.from_dict(t) for t in data]
+        except Exception:
+            return []
 
     @staticmethod
-    def from_json(json_str: str):
-        data = json.loads(json_str)
-        container = TemplateContainer()
-        for t in data.get('templates', []):
-            container.templates.append(Template.from_dict(t))
-        return container
+    def save_templates_to_file(path: str = None, templates: List[Template] = None):
+        """Save templates to JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        if path is None:
+            path = TemplateUtils.TEMPLATE_FILE
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump([t.to_dict() for t in templates], f, indent=2)
 
-    def to_json(self) -> str:
-        data = {
-            'templates': [t.to_dict() for t in self.templates]
-        }
-        return json.dumps(data, indent=2)
+    @staticmethod
+    def import_templates_from_file(path: str = None) -> List[Template]:
+        """Import templates from JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        return TemplateUtils.load_templates_from_file(path)
+
+    @staticmethod
+    def export_templates_to_file(path: str = None, templates: List[Template] = None):
+        """Export templates to JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        TemplateUtils.save_templates_to_file(path, templates)
