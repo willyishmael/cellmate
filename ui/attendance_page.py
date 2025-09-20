@@ -101,6 +101,9 @@ class AttendancePage(QWidget):
         main_layout.addLayout(right_panel, 3)
 
         self.setLayout(main_layout)
+        
+        # Connect signal to update dropdown automatically
+        self.vm.templates_changed.connect(self.load_templates_to_dropdown)
         self.load_templates_to_dropdown()
         
     # Handle template selection
