@@ -9,12 +9,11 @@ from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
 from ui.template_bar import TemplateBar
 from ui.period_date_widget import PeriodDateWidget
-from view_model.template_view_model import TemplateViewModel
 
 class AttendancePage(QWidget):
-    def __init__(self):
+    def __init__(self, template_vm):
         super().__init__()
-        self.vm = TemplateViewModel()
+        self.vm = template_vm
         self.current_template_index = None
         main_layout = QHBoxLayout()
 

@@ -9,6 +9,7 @@ from ui.attendance_optdrv_page import AttendanceOptDrvPage
 from ui.overtime_optdrv_page import OvertimeOptDrvPage
 from ui.template_page import TemplatePage
 from ui.app_info_page import AppInfoPage
+from view_model.template_view_model import TemplateViewModel
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -20,11 +21,12 @@ class MainWindow(QMainWindow):
         self.stacked = QStackedWidget()
 
         # Placeholder pages
-        self.attendance_page = AttendancePage()
-        self.overtime_page = OvertimePage()
-        self.attendance_optdrv_page = AttendanceOptDrvPage()
-        self.overtime_optdrv_page = OvertimeOptDrvPage()
-        self.templates_page = TemplatePage()
+        self.template_vm = TemplateViewModel()
+        self.attendance_page = AttendancePage(self.template_vm)
+        self.overtime_page = OvertimePage(self.template_vm)
+        self.attendance_optdrv_page = AttendanceOptDrvPage(self.template_vm)
+        self.overtime_optdrv_page = OvertimeOptDrvPage(self.template_vm)
+        self.templates_page = TemplatePage(self.template_vm)
         self.app_info_page = AppInfoPage()
 
         self.stacked.addWidget(self.attendance_page)  # index 0

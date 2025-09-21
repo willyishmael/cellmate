@@ -9,14 +9,12 @@ import json
 from view_model.template_view_model import TemplateViewModel
 
 class TemplatePage(QWidget):
-    def __init__(self):
+    def __init__(self, template_vm):
         super().__init__()
+        self.vm = template_vm
+        
         self.setWindowTitle("Template Management")
         layout = QVBoxLayout()
-        
-
-        # ViewModel
-        self.vm = TemplateViewModel()
 
         # Title
         title = QLabel("🗂 Template Management")
@@ -78,6 +76,7 @@ class TemplatePage(QWidget):
         self.btn_export.clicked.connect(self.export_templates)
         self.btn_import.clicked.connect(self.import_templates)
         
+        self.vm.templates_changed.connect(self.refresh_table)
         self.refresh_table()
 
     def refresh_table(self):

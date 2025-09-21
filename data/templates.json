@@ -1,0 +1,43 @@
+[
+  {
+    "name": "PLANT",
+    "template_type": "attendance",
+    "settings": {
+      "period": "August to September",
+      "start_date": "2025-09-12",
+      "end_date": "2025-09-12",
+      "company_codes": {
+        "PM": false,
+        "PTM": false,
+        "TMP": false
+      },
+      "employee_id_col": "1",
+      "employee_name_col": "2",
+      "company_code_col": "3",
+      "data_start_row": "",
+      "date_header_row": "",
+      "row_counter_col": "",
+      "sheet_names": "",
+      "ignore_list": "OBI-623618"
+    }
+  },
+  {
+    "name": "alo",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": false,
+        "TMP": false
+      },
+      "employee_id_col": "1",
+      "employee_name_col": "2",
+      "company_code_col": "3",
+      "data_start_row": "w",
+      "date_header_row": "e",
+      "row_counter_col": "r",
+      "sheet_names": "lalalalal",
+      "ignore_list": "OBI-1111"
+    }
+  }
+]

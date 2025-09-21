@@ -8,7 +8,7 @@ from ui.drop_area_view import DropArea
 from ui.period_dropdown import PeriodDropdown
 
 class OvertimePage(QWidget):
-    def __init__(self):
+    def __init__(self, template_vm):
         super().__init__()
         main_layout = QHBoxLayout()
 
