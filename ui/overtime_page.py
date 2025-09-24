@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (
     QLineEdit, QCheckBox, QDateEdit, QTextEdit
 )
 from PySide6.QtCore import Qt, QDate
-from ui.drop_area_view import DropArea
-from ui.period_dropdown import PeriodDropdown
+from ui.widget.drop_area_view import DropArea
+from ui.widget.period_dropdown import PeriodDropdown
 
 class OvertimePage(QWidget):
     def __init__(self, template_vm):

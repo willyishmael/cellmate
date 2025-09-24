@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QHBoxLayout, QFormLayout, QWidget
 from PySide6.QtCore import Qt, QDate
-from ui.period_dropdown import PeriodDropdown
+from ui.widget.period_dropdown import PeriodDropdown
 from PySide6.QtWidgets import QDateEdit
 
 class PeriodDateWidget(QWidget):

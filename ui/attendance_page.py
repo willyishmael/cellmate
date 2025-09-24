@@ -6,9 +6,9 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtCore import Qt, QDate
-from ui.drop_area_view import DropArea
-from ui.template_bar import TemplateBar
-from ui.period_date_widget import PeriodDateWidget
+from ui.widget.drop_area_view import DropArea
+from ui.widget.template_bar import TemplateBar
+from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 
 class AttendancePage(QWidget):
