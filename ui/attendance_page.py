@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
     QSpacerItem, QSizePolicy, QFormLayout,
-    QLineEdit, QCheckBox, QTextEdit ,QPushButton,
+    QLineEdit, QTextEdit ,QPushButton,
     QInputDialog, QMessageBox
 )
 
@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt, QDate
 from ui.drop_area_view import DropArea
 from ui.template_bar import TemplateBar
 from ui.period_date_widget import PeriodDateWidget
+from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 
 class AttendancePage(QWidget):
     def __init__(self, template_vm):
@@ -55,14 +56,8 @@ class AttendancePage(QWidget):
         # Add period/date widget as a row
         form_layout.addRow(self.period_date_widget)
 
-        company_codes_layout = QHBoxLayout()
-        self.checkbox_pm = QCheckBox("PM")
-        self.checkbox_ptm = QCheckBox("PTM")
-        self.checkbox_tmp = QCheckBox("TMP")
-        company_codes_layout.addWidget(self.checkbox_pm)
-        company_codes_layout.addWidget(self.checkbox_ptm)
-        company_codes_layout.addWidget(self.checkbox_tmp)
-        form_layout.addRow("Company Codes:", company_codes_layout)
+        self.company_codes_layout = CompanyCodeCheckbox()
+        form_layout.addRow("Company Codes:", self.company_codes_layout)
 
         # Create and store references to QLineEdit fields
         self.field_employee_id_col = self.create_field("Enter Employee ID Column Index (e.g., 5)")
@@ -120,9 +115,7 @@ class AttendancePage(QWidget):
     # Load settings dict into form fields
     def load_settings_to_fields(self, settings):
         
-        self.checkbox_pm.setChecked(settings.get("company_codes", {}).get("PM", False))
-        self.checkbox_ptm.setChecked(settings.get("company_codes", {}).get("PTM", False))
-        self.checkbox_tmp.setChecked(settings.get("company_codes", {}).get("TMP", False))
+        self.company_codes_layout.load_settings(settings)
         
         # Set QLineEdit fields
         self.field_employee_id_col.setText(str(settings.get("employee_id_col", "")))
@@ -177,11 +170,7 @@ class AttendancePage(QWidget):
         settings = {}
         
         # Company codes
-        settings["company_codes"] = {
-            "PM": self.checkbox_pm.isChecked(),
-            "PTM": self.checkbox_ptm.isChecked(),
-            "TMP": self.checkbox_tmp.isChecked(),
-        }
+        settings["company_codes"] = self.company_codes_layout.get_company_codes()
         # QLineEdit fields (direct extraction)
         settings["employee_id_col"] = self.field_employee_id_col.text()
         settings["employee_name_col"] = self.field_employee_name_col.text()
@@ -205,13 +194,9 @@ class AttendancePage(QWidget):
             dropdown.addItem(t.name)
         dropdown.blockSignals(False)
 
+    # Clear all form fields
     def clear_settings_fields(self):
-        
-        self.checkbox_pm.setChecked(False)
-        self.checkbox_ptm.setChecked(False)
-        self.checkbox_tmp.setChecked(False)
-        
-        # Assuming fields are in order as created
+        self.company_codes_layout.clear_checked()
         self.field_employee_id_col.clear()
         self.field_employee_name_col.clear()
         self.field_company_code_col.clear()
