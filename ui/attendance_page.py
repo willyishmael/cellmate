@@ -59,19 +59,20 @@ class AttendancePage(QWidget):
         self.company_codes_layout = CompanyCodeCheckbox()
         form_layout.addRow("Company Codes:", self.company_codes_layout)
 
-        # Create and store references to QLineEdit fields
-        self.field_employee_id_col = self.create_field("Enter Employee ID Column Index (e.g., 5)")
-        self.field_employee_name_col = self.create_field("Enter Employee Name Column Index (e.g., 6)")
-        self.field_company_code_col = self.create_field("Enter Company Code Column Index (e.g., 7)")
-        self.field_data_start_row = self.create_field("Enter Data Start Row Index (e.g., 2)")
-        self.field_date_header_row = self.create_field("Enter Date Header Row Index (e.g., 1)")
-        self.field_row_counter_col = self.create_field("Enter Row Counter Column Index (e.g., 3)")
-        form_layout.addRow("Employee ID Column:", self.field_employee_id_col)
-        form_layout.addRow("Employee Name Column:", self.field_employee_name_col)
-        form_layout.addRow("Company Code Column:", self.field_company_code_col)
-        form_layout.addRow("Data Start Row:", self.field_data_start_row)
-        form_layout.addRow("Date Header Row:", self.field_date_header_row)
-        form_layout.addRow("Row Counter Column:", self.field_row_counter_col)
+        # Define field labels and placeholders
+        self.field_configs = {
+            "Employee ID Column": "Enter Employee ID Column Index (e.g., 5)",
+            "Employee Name Column": "Enter Employee Name Column Index (e.g., 6)",
+            "Company Code Column": "Enter Company Code Column Index (e.g., 7)",
+            "Data Start Row": "Enter Data Start Row Index (e.g., 2)",
+            "Date Header Row": "Enter Date Header Row Index (e.g., 1)",
+            "Row Counter Column": "Enter Row Counter Column Index (e.g., 3)",
+        }
+        
+        for label, placeholder in self.field_configs.items():
+            field = self.create_field(placeholder)
+            form_layout.addRow(f"{label}:", field)
+            setattr(self, f"field_{label.lower().replace(' ', '_')}", field)
 
         self.sheet_names_text_edit = QTextEdit()
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
@@ -114,16 +115,15 @@ class AttendancePage(QWidget):
 
     # Load settings dict into form fields
     def load_settings_to_fields(self, settings):
-        
         self.company_codes_layout.load_settings(settings)
         
-        # Set QLineEdit fields
-        self.field_employee_id_col.setText(str(settings.get("employee_id_col", "")))
-        self.field_employee_name_col.setText(str(settings.get("employee_name_col", "")))
-        self.field_company_code_col.setText(str(settings.get("company_code_col", "")))
-        self.field_data_start_row.setText(str(settings.get("data_start_row", "")))
-        self.field_date_header_row.setText(str(settings.get("date_header_row", "")))
-        self.field_row_counter_col.setText(str(settings.get("row_counter_col", "")))
+        # Set QLineEdit fields based on field_configs
+        for attr in self.field_configs.keys():
+            field_name = f"field_{attr.lower().replace(' ', '_')}"
+            field = getattr(self, field_name, None)
+            if field and attr in settings:
+                field.setText(str(settings[attr]))
+        
         self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
         self.ignore_list_text_edit.setPlainText(settings.get("ignore_list", ""))
 
@@ -171,13 +171,14 @@ class AttendancePage(QWidget):
         
         # Company codes
         settings["company_codes"] = self.company_codes_layout.get_company_codes()
-        # QLineEdit fields (direct extraction)
-        settings["employee_id_col"] = self.field_employee_id_col.text()
-        settings["employee_name_col"] = self.field_employee_name_col.text()
-        settings["company_code_col"] = self.field_company_code_col.text()
-        settings["data_start_row"] = self.field_data_start_row.text()
-        settings["date_header_row"] = self.field_date_header_row.text()
-        settings["row_counter_col"] = self.field_row_counter_col.text()
+        
+        # QLineEdit fields based on field_configs
+        for attr in self.field_configs.keys():
+            field_name = f"field_{attr.lower().replace(' ', '_')}"
+            field = getattr(self, field_name, None)
+            if field:
+                settings[attr] = field.text().strip()
+                
         # Sheet names and ignore list
         settings["sheet_names"] = self.sheet_names_text_edit.toPlainText()
         settings["ignore_list"] = self.ignore_list_text_edit.toPlainText()
@@ -197,12 +198,13 @@ class AttendancePage(QWidget):
     # Clear all form fields
     def clear_settings_fields(self):
         self.company_codes_layout.clear_checked()
-        self.field_employee_id_col.clear()
-        self.field_employee_name_col.clear()
-        self.field_company_code_col.clear()
-        self.field_data_start_row.clear()
-        self.field_date_header_row.clear()
-        self.field_row_counter_col.clear()
+        
+        for attr in self.field_configs.keys():
+            field_name = f"field_{attr.lower().replace(' ', '_')}"
+            field = getattr(self, field_name, None)
+            if field:
+                field.clear()
+                
         self.sheet_names_text_edit.clear()
         self.ignore_list_text_edit.clear()
 
@@ -224,4 +226,4 @@ class AttendancePage(QWidget):
         """Configure a date picker to default to yesterday's date."""
         yesterday = QDate.currentDate().addDays(-1)
         date_picker.setDate(yesterday)
-        date_picker.setCalendarPopup(True)  # Enable calendar popup for easier selection
+        date_picker.setCalendarPopup(True)
