@@ -10,6 +10,7 @@ from ui.widget.drop_area_view import DropArea
 from ui.widget.template_bar import TemplateBar
 from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
+from ui.widget.form_field_group import FormFieldGroup
 
 class AttendancePage(QWidget):
     def __init__(self, template_vm):
@@ -60,7 +61,7 @@ class AttendancePage(QWidget):
         form_layout.addRow("Company Codes:", self.company_codes_layout)
 
         # Define field labels and placeholders
-        self.field_configs = {
+        field_configs = {
             "Employee ID Column": "Enter Employee ID Column Index (e.g., 5)",
             "Employee Name Column": "Enter Employee Name Column Index (e.g., 6)",
             "Company Code Column": "Enter Company Code Column Index (e.g., 7)",
@@ -68,20 +69,16 @@ class AttendancePage(QWidget):
             "Date Header Row": "Enter Date Header Row Index (e.g., 1)",
             "Row Counter Column": "Enter Row Counter Column Index (e.g., 3)",
         }
-        
-        for label, placeholder in self.field_configs.items():
-            field = self.create_field(placeholder)
-            form_layout.addRow(f"{label}:", field)
-            setattr(self, f"field_{label.lower().replace(' ', '_')}", field)
+        self.form_field_group = FormFieldGroup(field_configs, form_layout)
 
         self.sheet_names_text_edit = QTextEdit()
         self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
-        self.sheet_names_text_edit.setFixedHeight(60)
+        self.sheet_names_text_edit.setFixedHeight(42)
         form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
 
         self.ignore_list_text_edit = QTextEdit()
         self.ignore_list_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.ignore_list_text_edit.setFixedHeight(60)
+        self.ignore_list_text_edit.setFixedHeight(42)
         form_layout.addRow("Ignore List:", self.ignore_list_text_edit)
 
         right_panel.addLayout(form_layout)
@@ -116,14 +113,7 @@ class AttendancePage(QWidget):
     # Load settings dict into form fields
     def load_settings_to_fields(self, settings):
         self.company_codes_layout.load_settings(settings)
-        
-        # Set QLineEdit fields based on field_configs
-        for attr in self.field_configs.keys():
-            field_name = f"field_{attr.lower().replace(' ', '_')}"
-            field = getattr(self, field_name, None)
-            if field and attr in settings:
-                field.setText(str(settings[attr]))
-        
+        self.form_field_group.load_settings(settings)
         self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
         self.ignore_list_text_edit.setPlainText(settings.get("ignore_list", ""))
 
@@ -172,12 +162,9 @@ class AttendancePage(QWidget):
         # Company codes
         settings["company_codes"] = self.company_codes_layout.get_company_codes()
         
-        # QLineEdit fields based on field_configs
-        for attr in self.field_configs.keys():
-            field_name = f"field_{attr.lower().replace(' ', '_')}"
-            field = getattr(self, field_name, None)
-            if field:
-                settings[attr] = field.text().strip()
+        # Other fields
+        field_values = self.form_field_group.get_field_values()
+        settings.update(field_values)
                 
         # Sheet names and ignore list
         settings["sheet_names"] = self.sheet_names_text_edit.toPlainText()
@@ -198,28 +185,9 @@ class AttendancePage(QWidget):
     # Clear all form fields
     def clear_settings_fields(self):
         self.company_codes_layout.clear_checked()
-        
-        for attr in self.field_configs.keys():
-            field_name = f"field_{attr.lower().replace(' ', '_')}"
-            field = getattr(self, field_name, None)
-            if field:
-                field.clear()
-                
+        self.form_field_group.clear_fields()        
         self.sheet_names_text_edit.clear()
         self.ignore_list_text_edit.clear()
-
-    # Helper method to create QLineEdit fields
-    def create_field(self, placeholder):
-        """Helper method to create a plain input field for QFormLayout."""
-        field = QLineEdit()
-        field.setPlaceholderText(placeholder)
-        field.setFixedHeight(28)
-        # Give each field a unique object name for easy lookup
-        if not hasattr(self, '_field_count'):
-            self._field_count = 0
-        field.setObjectName(f"field_{self._field_count}")
-        self._field_count += 1
-        return field
 
     # Refactored method to configure date pickers
     def configure_date_picker(self, date_picker):
