@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QPushButton, QInputDialog, QMessageBox
 )
 
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt
 from ui.widget.drop_area_view import DropArea
 from ui.widget.template_bar import TemplateBar
 from ui.widget.period_date_widget import PeriodDateWidget
@@ -106,12 +106,6 @@ class AttendancePage(QWidget):
         template = self.attendance_templates[self.current_template_index]
         self.load_settings_to_fields(template.settings)    
 
-    # Load settings dict into form fields
-    def load_settings_to_fields(self, settings):
-        self.company_codes_layout.load_settings(settings)
-        self.form_field_group.load_settings(settings)
-        self.multi_text_field_group.load_settings(settings)
-
     # Save current form values to the selected template
     def on_save_template(self):
         dropdown = self.template_bar.template_dropdown
@@ -150,10 +144,16 @@ class AttendancePage(QWidget):
                 dropdown.setCurrentIndex(i)
                 break
 
+    # Load settings dict into form fields
+    def load_settings_to_fields(self, settings):
+        self.company_codes_layout.load_settings(settings)
+        self.form_field_group.load_settings(settings)
+        self.multi_text_field_group.load_settings(settings)
+
     # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
         settings = {}
-        settings["company_codes"] = self.company_codes_layout.get_company_codes()
+        settings.update(self.company_codes_layout.get_company_codes())
         settings.update(self.form_field_group.get_field_values())    
         settings.update(self.multi_text_field_group.get_field_values())
         return settings
@@ -174,10 +174,3 @@ class AttendancePage(QWidget):
         self.company_codes_layout.clear_checked()
         self.form_field_group.clear_fields()        
         self.multi_text_field_group.clear_fields()
-
-    # Refactored method to configure date pickers
-    def configure_date_picker(self, date_picker):
-        """Configure a date picker to default to yesterday's date."""
-        yesterday = QDate.currentDate().addDays(-1)
-        date_picker.setDate(yesterday)
-        date_picker.setCalendarPopup(True)
