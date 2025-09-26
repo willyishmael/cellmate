@@ -1,8 +1,7 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
-    QSpacerItem, QSizePolicy, QFormLayout,
-    QLineEdit, QTextEdit ,QPushButton,
-    QInputDialog, QMessageBox
+    QSpacerItem, QSizePolicy, QFormLayout, 
+    QPushButton, QInputDialog, QMessageBox
 )
 
 from PySide6.QtCore import Qt, QDate
@@ -11,6 +10,7 @@ from ui.widget.template_bar import TemplateBar
 from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.form_field_group import FormFieldGroup
+from ui.widget.multi_text_field_group import MultiTextFieldGroup
 
 class AttendancePage(QWidget):
     def __init__(self, template_vm):
@@ -70,16 +70,12 @@ class AttendancePage(QWidget):
             "Row Counter Column": "Enter Row Counter Column Index (e.g., 3)",
         }
         self.form_field_group = FormFieldGroup(field_configs, form_layout)
-
-        self.sheet_names_text_edit = QTextEdit()
-        self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
-        self.sheet_names_text_edit.setFixedHeight(42)
-        form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
-
-        self.ignore_list_text_edit = QTextEdit()
-        self.ignore_list_text_edit.setPlaceholderText("Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-7565324)")
-        self.ignore_list_text_edit.setFixedHeight(42)
-        form_layout.addRow("Ignore List:", self.ignore_list_text_edit)
+        
+        edit_text_configs = {
+            "Sheet Names": "Enter sheet names separated by commas (e.g., Sheet1, Sheet2)",
+            "Ignore List": "Enter Employee IDs to ignore, separated by commas (e.g., OBI-212365, OBI-756532)"
+        }
+        self.multi_text_field_group = MultiTextFieldGroup(edit_text_configs, form_layout)
 
         right_panel.addLayout(form_layout)
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
@@ -114,8 +110,7 @@ class AttendancePage(QWidget):
     def load_settings_to_fields(self, settings):
         self.company_codes_layout.load_settings(settings)
         self.form_field_group.load_settings(settings)
-        self.sheet_names_text_edit.setPlainText(settings.get("sheet_names", ""))
-        self.ignore_list_text_edit.setPlainText(settings.get("ignore_list", ""))
+        self.multi_text_field_group.load_settings(settings)
 
     # Save current form values to the selected template
     def on_save_template(self):
@@ -158,17 +153,9 @@ class AttendancePage(QWidget):
     # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
         settings = {}
-        
-        # Company codes
         settings["company_codes"] = self.company_codes_layout.get_company_codes()
-        
-        # Other fields
-        field_values = self.form_field_group.get_field_values()
-        settings.update(field_values)
-                
-        # Sheet names and ignore list
-        settings["sheet_names"] = self.sheet_names_text_edit.toPlainText()
-        settings["ignore_list"] = self.ignore_list_text_edit.toPlainText()
+        settings.update(self.form_field_group.get_field_values())    
+        settings.update(self.multi_text_field_group.get_field_values())
         return settings
     
     # Load templates from ViewModel into dropdown
@@ -186,8 +173,7 @@ class AttendancePage(QWidget):
     def clear_settings_fields(self):
         self.company_codes_layout.clear_checked()
         self.form_field_group.clear_fields()        
-        self.sheet_names_text_edit.clear()
-        self.ignore_list_text_edit.clear()
+        self.multi_text_field_group.clear_fields()
 
     # Refactored method to configure date pickers
     def configure_date_picker(self, date_picker):
