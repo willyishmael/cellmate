@@ -5,6 +5,7 @@ class AppInfoPage(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
+        app_version = "1.0.0"  # You can dynamically fetch this if needed
 
         title = QLabel("📦 Application Information")
         title.setStyleSheet("font-weight: bold; font-size: 18px;")
@@ -13,15 +14,16 @@ class AppInfoPage(QWidget):
 
         info_text = QTextEdit()
         info_text.setReadOnly(True)
+        info_text.setStyleSheet("font-size: 14px;")
         info_text.setText(
             "Cellmate\n"
-            "Version: 1.0.0\n"
+            "Version: " + app_version + "\n"
             "\n"
-            "Developed by: Your Name or Team\n"
-            "Contact: your.email@example.com\n"
+            "Developed by: William Tangka\n"
+            "Contact: wtangka22@gmail.com\n"
             "\n"
             "Description:\n"
-            "Cellmate is a tool for managing attendance and overtime data.\n"
+            "Cellmate is a tool for attendance and overtime report format changer.\n"
             "Features include:\n"
             "- Excel file import\n"
             "- Data extraction and comparison\n"
