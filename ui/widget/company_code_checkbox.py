@@ -28,8 +28,14 @@ class CompanyCodeCheckbox(QWidget):
         
     def get_company_codes(self):
         """Return a dict of the current checkbox states."""
-        return {"Company Codes": {
+        return {"company_codes": {
             "PM": self.checkbox_pm.isChecked(),
             "PTM": self.checkbox_ptm.isChecked(),
             "TMP": self.checkbox_tmp.isChecked()
         }}
+        
+    def has_checked_codes(self):
+        """Return True if any checkbox is checked."""
+        return (self.checkbox_pm.isChecked() or 
+                self.checkbox_ptm.isChecked() or 
+                self.checkbox_tmp.isChecked())

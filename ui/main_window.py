@@ -3,12 +3,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout
 )
 
-from ui.attendance_page import AttendancePage
-from ui.overtime_page import OvertimePage
-from ui.attendance_optdrv_page import AttendanceOptDrvPage
-from ui.overtime_optdrv_page import OvertimeOptDrvPage
-from ui.template_page import TemplatePage
-from ui.app_info_page import AppInfoPage
+from ui.page.attendance_page import AttendancePage
+from ui.page.overtime_page import OvertimePage
+from ui.page.attendance_optdrv_page import AttendanceOptDrvPage
+from ui.page.overtime_optdrv_page import OvertimeOptDrvPage
+from ui.page.template_page import TemplatePage
+from ui.page.app_info_page import AppInfoPage
 from view_model.template_view_model import TemplateViewModel
 
 class MainWindow(QMainWindow):

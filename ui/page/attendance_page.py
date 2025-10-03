@@ -11,11 +11,13 @@ from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.form_field_group import FormFieldGroup
 from ui.widget.multi_text_field_group import MultiTextFieldGroup
+from view_model.attendance_view_model import AttendanceViewModel
 
 class AttendancePage(QWidget):
     def __init__(self, template_vm):
         super().__init__()
-        self.vm = template_vm
+        self.template_vm = template_vm
+        self.attendance_vm = AttendanceViewModel()
         self.current_template_index = None
         main_layout = QHBoxLayout()
 
@@ -84,6 +86,7 @@ class AttendancePage(QWidget):
         btn_compare = QPushButton("🔍 Compare Data")
         btn_extract.setFixedHeight(40)
         btn_compare.setFixedHeight(40)
+        btn_extract.clicked.connect(self.on_extract)
         right_panel.addWidget(btn_extract)
         right_panel.addWidget(btn_compare)
         main_layout.addLayout(right_panel, 3)
@@ -91,7 +94,7 @@ class AttendancePage(QWidget):
         self.setLayout(main_layout)
         
         # Connect signal to update dropdown automatically
-        self.vm.templates_changed.connect(self.load_templates_to_dropdown)
+        self.template_vm.templates_changed.connect(self.load_templates_to_dropdown)
         self.load_templates_to_dropdown()
         
     # Handle template selection
@@ -125,7 +128,7 @@ class AttendancePage(QWidget):
             return
 
         settings = self.collect_settings_from_fields()
-        self.vm.update_template(self.current_template_index, name=name, template_type="attendance", settings=settings)
+        self.template_vm.update_template(self.current_template_index, name=name, template_type="attendance", settings=settings)
         self.load_templates_to_dropdown()
         dropdown.setCurrentIndex(index)
 
@@ -135,7 +138,7 @@ class AttendancePage(QWidget):
         if not ok or not name.strip():
             return
         settings = self.collect_settings_from_fields()
-        self.vm.add_template(name.strip(), "attendance", settings)
+        self.template_vm.add_template(name.strip(), "attendance", settings)
         self.load_templates_to_dropdown()
         # Optionally select the new template in dropdown
         dropdown = self.template_bar.template_dropdown
@@ -164,7 +167,7 @@ class AttendancePage(QWidget):
         dropdown.blockSignals(True)
         dropdown.clear()
         dropdown.addItem("Select Template")
-        self.attendance_templates = self.vm.get_templates(template_type="attendance")
+        self.attendance_templates = self.template_vm.get_templates(template_type="attendance")
         for t in self.attendance_templates:
             dropdown.addItem(t.name)
         dropdown.blockSignals(False)
@@ -174,3 +177,27 @@ class AttendancePage(QWidget):
         self.company_codes_layout.clear_checked()
         self.form_field_group.clear_fields()        
         self.multi_text_field_group.clear_fields()
+
+    def on_extract(self):
+        settings = self.collect_settings_from_fields()
+        file = self.drop_area_1.file_path
+        
+        if not file:
+            QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
+            return
+        
+        if not settings:
+            QMessageBox.warning(self, "Warning", "Please fill in all required fields.")
+            return
+        
+        # Validate company codes
+        if not self.company_codes_layout.has_checked_codes():
+            QMessageBox.warning(self, "Warning", "Please select at least one company code.")
+            return
+        
+        # Extract data using ViewModel
+        try:
+            self.attendance_vm.extract_attendance(settings, file)
+            QMessageBox.information(self, "Success", "Data extraction completed successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")

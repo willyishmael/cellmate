@@ -9,7 +9,6 @@ class AttendanceExtract:
         self.sheet_names = []
         self.ignore_list = []
         self.data = []
-        
     
     def extract(self, settings: dict, file: str):
         self.settings = settings
@@ -55,36 +54,42 @@ class AttendanceExtract:
     def _process_source_sheet(self, ws, targets):
         s = self.settings
         start_row = int(s["data_start_row"])
-        id_col = int(s["employee_id_col"])
-        name_col = int(s["employee_name_col"])
-        code_col = int(s["company_code_col"])
-        header_row = int(s["header_row"])
-        row_counter_col = int(s["row_counter_col"])
-        
-        last_row = ws.max_row
-        
-        for row in range(start_row, last_row + 1):
+        id_col = int(s["employee_id_column"])
+        name_col = int(s["employee_name_column"])
+        code_col = int(s["company_code_column"])
+        header_row = int(s["date_header_row"])
+        row_counter_col = int(s["row_counter_column"])
+
+        # VBA-like logic: find last non-empty cell in row_counter_col, from bottom up
+        last_data_row = start_row
+        for row in range(ws.max_row, start_row - 1, -1):
+            value = ws.cell(row=row, column=row_counter_col).value
+            if value is not None and str(value).strip() != "":
+                last_data_row = row
+                break
+
+        for row in range(start_row, last_data_row + 1):
             employee_id = ws.cell(row=row, column=id_col).value
             employee_name = ws.cell(row=row, column=name_col).value
             company_code = ws.cell(row=row, column=code_col).value
-            
+
             if not employee_id or str(employee_id).strip() in self.ignore_list:
                 continue
-            
+
             if company_code not in targets:
                 continue
-            
-            for col in range(code_col +1, ws.max_column + 1):
+
+            for col in range(code_col + 1, ws.max_column + 1):
                 code = ws.cell(row=row, column=col).value
                 date = ws.cell(row=header_row, column=col).value
-                
+
                 if not code or str(code).strip() == "" or not date:
                     continue
-                
+
                 ws_target = targets[company_code].active
-                
+
                 status, timein, timeout = self._map_status(code)
-                
+
                 ws_target.append([
                     self._format_date(date),
                     employee_id,
@@ -119,4 +124,5 @@ class AttendanceExtract:
             return datetime.strptime(str(value), "%Y-%m-%d").strftime("%Y-%m-%d")
         except Exception:
             return str(value)
-        
+    
+       
