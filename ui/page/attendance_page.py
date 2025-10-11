@@ -182,6 +182,11 @@ class AttendancePage(QWidget):
         settings = self.collect_settings_from_fields()
         file = self.drop_area_1.file_path
         
+        date_start = self.period_date_widget.start_date_picker.date()
+        date_end = self.period_date_widget.end_date_picker.date()
+        date_start_str = date_start.toString("yyyy-MM-dd")
+        date_end_str = date_end.toString("yyyy-MM-dd")
+        
         if not file:
             QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
             return
@@ -197,7 +202,7 @@ class AttendancePage(QWidget):
         
         # Extract data using ViewModel
         try:
-            self.attendance_vm.extract_attendance(settings, file)
+            self.attendance_vm.extract_attendance(settings, date_start_str, date_end_str, file)
             QMessageBox.information(self, "Success", "Data extraction completed successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")

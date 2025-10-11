@@ -10,7 +10,7 @@ class AttendanceExtract:
         self.ignore_list = []
         self.data = []
     
-    def extract(self, settings: dict, file: str):
+    def extract(self, settings: dict, date_start_str: str, date_end_str: str, file: str):
         self.settings = settings
         self.wb = load_workbook(file, data_only=True)
         source_path = Path(file)
@@ -36,7 +36,7 @@ class AttendanceExtract:
         }
         
         for ws in ws_sources:
-            self._process_source_sheet(ws, targets)
+            self._process_source_sheet(ws, targets, date_start_str, date_end_str)
             
         for code, twb in targets.items():
             out_path = output_dir / f"{code}_output.xlsx"
@@ -51,12 +51,12 @@ class AttendanceExtract:
         ws.append(headers)
         return wb
     
-    def _process_source_sheet(self, ws, targets):
+    def _process_source_sheet(self, ws, targets, date_start_str, date_end_str):
         s = self.settings
         start_row = int(s["data_start_row"])
         id_col = int(s["employee_id_column"])
         name_col = int(s["employee_name_column"])
-        code_col = int(s["company_code_column"])
+        company_code_col = int(s["company_code_column"])
         header_row = int(s["date_header_row"])
         row_counter_col = int(s["row_counter_column"])
 
@@ -67,11 +67,41 @@ class AttendanceExtract:
             if value is not None and str(value).strip() != "":
                 last_data_row = row
                 break
+        
+        # Extract dates from header row
+        header_dates = []
+        for col in range(company_code_col + 1, ws.max_column + 1):
+            cell_value = ws.cell(row=header_row, column=col).value
+            try:
+                date = self._format_date(cell_value)
+                header_dates.append((col, date))
+            except Exception:
+                continue
+            
+        # Determine start and end columns based on date range
+        start_col = None
+        end_col = None
+        
+        for col, date in header_dates:
+            print(f"col {col}, date {date}")
+            if date == date_start_str and start_col is None:
+                start_col = col
+            if date == date_end_str:
+                end_col = col
 
+        if start_col is None:
+            start_col = company_code_col + 1
+        if end_col is None:
+            end_col = ws.max_column
+        
+        print(f"Start column str: {date_start_str}, End column str: {date_end_str}")
+        print(f"Start column: {start_col}, End column: {end_col}")
+        
+        # Process each row of data
         for row in range(start_row, last_data_row + 1):
             employee_id = ws.cell(row=row, column=id_col).value
             employee_name = ws.cell(row=row, column=name_col).value
-            company_code = ws.cell(row=row, column=code_col).value
+            company_code = ws.cell(row=row, column=company_code_col).value
 
             if not employee_id or str(employee_id).strip() in self.ignore_list:
                 continue
@@ -79,7 +109,7 @@ class AttendanceExtract:
             if company_code not in targets:
                 continue
 
-            for col in range(code_col + 1, ws.max_column + 1):
+            for col in range(start_col, end_col + 1):
                 code = ws.cell(row=row, column=col).value
                 date = ws.cell(row=header_row, column=col).value
 
