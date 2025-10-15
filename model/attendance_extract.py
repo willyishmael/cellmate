@@ -1,9 +1,11 @@
 from openpyxl import load_workbook, Workbook
 from datetime import datetime
 from pathlib import Path
+from model.helper.export_file_formatter import ExportFileFormatter
 
 class AttendanceExtract:
     def __init__(self):
+        self.formatter = ExportFileFormatter()
         self.settings = {}
         self.wb = None
         self.sheet_names = []
@@ -11,6 +13,7 @@ class AttendanceExtract:
         self.data = []
     
     def extract(self, settings: dict, date_start_str: str, date_end_str: str, file: str):
+        print("Starting extraction process...")
         self.settings = settings
         self.wb = load_workbook(file, data_only=True)
         source_path = Path(file)
@@ -38,8 +41,12 @@ class AttendanceExtract:
         for ws in ws_sources:
             self._process_source_sheet(ws, targets, date_start_str, date_end_str)
             
+        print("Saving output files...")
+        print(f"Targets Items: {list(targets.keys())}")
         for code, twb in targets.items():
+            print(f"Saving output for company code: {code}")
             out_path = output_dir / f"{code}_output.xlsx"
+            self.formatter.format_worksheet(twb.active)
             twb.save(out_path)
             
     def _init_target_sheet(self, company_code):
@@ -52,6 +59,7 @@ class AttendanceExtract:
         return wb
     
     def _process_source_sheet(self, ws, targets, date_start_str, date_end_str):
+        print(f"Processing sheet: {ws.title}")
         s = self.settings
         start_row = int(s["data_start_row"])
         id_col = int(s["employee_id_column"])
@@ -83,7 +91,6 @@ class AttendanceExtract:
         end_col = None
         
         for col, date in header_dates:
-            print(f"col {col}, date {date}")
             if date == date_start_str and start_col is None:
                 start_col = col
             if date == date_end_str:
@@ -93,9 +100,8 @@ class AttendanceExtract:
             start_col = company_code_col + 1
         if end_col is None:
             end_col = ws.max_column
-        
-        print(f"Start column str: {date_start_str}, End column str: {date_end_str}")
-        print(f"Start column: {start_col}, End column: {end_col}")
+            
+        print(f"Data rows: {start_row} to {last_data_row}, Columns: {start_col} to {end_col}")
         
         # Process each row of data
         for row in range(start_row, last_data_row + 1):
@@ -154,5 +160,3 @@ class AttendanceExtract:
             return datetime.strptime(str(value), "%Y-%m-%d").strftime("%Y-%m-%d")
         except Exception:
             return str(value)
-    
-       
