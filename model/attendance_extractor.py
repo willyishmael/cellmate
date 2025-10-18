@@ -12,9 +12,9 @@ class AttendanceExtractor(BaseAttendanceProcessor):
         """Run the extraction process with given settings and file."""
         print("Starting extraction process...")
         self.apply_settings(settings)
-        wb = self.load_workbook(file)
+        self.load_attendance_wb(file)
         output_dir = self.get_output_dir(file)
-        ws_sources = self.get_source_sheets()
+        ws_sources = self.get_attendance_source_sheets()
         
         # Prepare target workbooks for each selected company code
         targets = {

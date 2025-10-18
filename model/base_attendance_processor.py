@@ -11,7 +11,8 @@ class BaseAttendanceProcessor:
 
     def __init__(self):
         self.settings = {}
-        self.wb = None
+        self.attendance_wb = None
+        self.hris_wb = None
         self.sheet_names = []
         self.ignore_list = []
         self.company_codes = {}
@@ -57,25 +58,41 @@ class BaseAttendanceProcessor:
         return [x.strip() for x in value.split(",") if x.strip()]
 
     # File Handling
-    def load_workbook(self, file_path: str):
-        """Load Excel file."""
+    def load_attendance_wb(self, file_path: str):
+        """Load Attendance Excel file."""
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
-        self.wb = load_workbook(path, data_only=True)
-        return self.wb
+        self.attendance_wb = load_workbook(path, data_only=True)
+        return self.attendance_wb
+    
+    def load_hris_wb(self, hris_file: str):
+        """Load HRIS Excel file."""
+        path = Path(hris_file)
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {path}")
+        self.hris_wb = load_workbook(path, data_only=True)
+        return self.hris_wb
 
     def get_output_dir(self, file_path: str):
         """Return directory where output files should be saved."""
         return Path(file_path).parent
 
-    def get_source_sheets(self):
+    def get_attendance_source_sheets(self):
         """Return sheet objects based on settings.sheet_names."""
-        if not self.wb:
+        if not self.attendance_wb:
             raise ValueError("Workbook not loaded yet.")
         if not self.sheet_names:
-            return [self.wb.active]
-        return [self.wb[s] for s in self.sheet_names if s in self.wb.sheetnames]
+            return [self.attendance_wb.active]
+        return [self.attendance_wb[s] for s in self.sheet_names if s in self.attendance_wb.sheetnames]
+    
+    def get_hris_source_sheets(self):
+        """Return sheet objects based on settings.sheet_names."""
+        if not self.hris_wb:
+            raise ValueError("Workbook not loaded yet.")
+        if not self.sheet_names:
+            return [self.hris_wb.active]
+        return [self.hris_wb[s] for s in self.sheet_names if s in self.hris_wb.sheetnames]
 
     # Utility Methods
     def _format_date(self, value):
