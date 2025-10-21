@@ -156,6 +156,22 @@ class AttendancePage(QWidget):
     # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
         settings = {}
+        
+        validated_company_codes, validated_company_codes_message = self.company_codes_layout.has_checked_codes()
+        if not validated_company_codes:
+            QMessageBox.warning(self, "Warning", validated_company_codes_message)
+            return {}
+        
+        validated_form_fields, validated_form_message = self.form_field_group.validate_fields()
+        if not validated_form_fields:
+            QMessageBox.warning(self, "Warning", validated_form_message)
+            return {}
+
+        validated_multi_text, validated_multi_text_message = self.multi_text_field_group.validate_fields()
+        if not validated_multi_text:
+            QMessageBox.warning(self, "Warning", validated_multi_text_message)
+            return {}
+
         settings.update(self.company_codes_layout.get_company_codes())
         settings.update(self.form_field_group.get_field_values())    
         settings.update(self.multi_text_field_group.get_field_values())
@@ -180,6 +196,9 @@ class AttendancePage(QWidget):
 
     def on_extract(self):
         settings = self.collect_settings_from_fields()
+        if settings == {}:
+            return
+        
         file = self.drop_area_1.file_path
         
         date_start = self.period_date_widget.start_date_picker.date()
@@ -191,18 +210,38 @@ class AttendancePage(QWidget):
             QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
             return
         
-        if not settings:
-            QMessageBox.warning(self, "Warning", "Please fill in all required fields.")
-            return
-        
-        # Validate company codes
-        if not self.company_codes_layout.has_checked_codes():
-            QMessageBox.warning(self, "Warning", "Please select at least one company code.")
-            return
-        
         # Extract data using ViewModel
         try:
             self.attendance_vm.extract_attendance(settings, date_start_str, date_end_str, file)
             QMessageBox.information(self, "Success", "Data extraction completed successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")
+            
+    def on_compare(self):
+        settings = self.collect_settings_from_fields()
+        if settings == {}:
+            return
+        
+        attendance_file = self.drop_area_1.file_path
+        hris_file = self.drop_area_2.file_path
+        
+        date_start = self.period_date_widget.start_date_picker.date()
+        date_end = self.period_date_widget.end_date_picker.date()
+        date_start_str = date_start.toString("yyyy-MM-dd")
+        date_end_str = date_end.toString("yyyy-MM-dd")
+        
+        if not attendance_file:
+            QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
+            return
+        
+        if not hris_file:
+            QMessageBox.warning(self, "Warning", "Please drop an HRIS Export Excel file.")
+            return
+
+        # Compare data using ViewModel
+        try:
+            self.attendance_vm.compare_attendance(settings, date_start_str, date_end_str, attendance_file, hris_file)
+            QMessageBox.information(self, "Success", "Data comparison completed successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred during comparison: {str(e)}")
+    

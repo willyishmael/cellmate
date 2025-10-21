@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QCheckBox, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QCheckBox, QHBoxLayout, QMessageBox
 
 class CompanyCodeCheckbox(QWidget):
     """A widget containing checkboxes for company codes PM, PTM, and TMP."""
@@ -36,6 +36,11 @@ class CompanyCodeCheckbox(QWidget):
         
     def has_checked_codes(self):
         """Return True if any checkbox is checked."""
-        return (self.checkbox_pm.isChecked() or 
+        has_checked = (self.checkbox_pm.isChecked() or 
                 self.checkbox_ptm.isChecked() or 
                 self.checkbox_tmp.isChecked())
+        
+        if not has_checked:
+            return False, "Please select at least one company code."
+            
+        return True, ""

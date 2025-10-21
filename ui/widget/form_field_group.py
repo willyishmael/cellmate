@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QLineEdit
 
 class FormFieldGroup:
+    ""
 
     def __init__(self, field_configs, parent_layout):
         self.field_configs = {}
@@ -42,3 +43,11 @@ class FormFieldGroup:
             values[key] = field.text().strip()
         self.for_each_field(collect)
         return values
+    
+    def validate_fields(self):
+        for key in self.field_configs.keys():
+            field_name = f"field_{key}"
+            field = getattr(self, field_name, None)
+            if field and field.text().strip() == "":
+                return False, f"Please fill in the '{self.field_configs[key]}' field."
+        return True, ""
