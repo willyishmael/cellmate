@@ -222,6 +222,17 @@ class AttendancePage(QWidget):
         if settings == {}:
             return
         
+        validated_attendance_file, attendance_file_message = self.drop_area_1.validate_file()
+        validated_hris_file, hris_file_message = self.drop_area_2.validate_file()
+        
+        if not validated_attendance_file:
+            QMessageBox.warning(self, "Warning", attendance_file_message)
+            return
+        
+        if not validated_hris_file:
+            QMessageBox.warning(self, "Warning", hris_file_message)
+            return
+        
         attendance_file = self.drop_area_1.file_path
         hris_file = self.drop_area_2.file_path
         
@@ -229,14 +240,6 @@ class AttendancePage(QWidget):
         date_end = self.period_date_widget.end_date_picker.date()
         date_start_str = date_start.toString("yyyy-MM-dd")
         date_end_str = date_end.toString("yyyy-MM-dd")
-        
-        if not attendance_file:
-            QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
-            return
-        
-        if not hris_file:
-            QMessageBox.warning(self, "Warning", "Please drop an HRIS Export Excel file.")
-            return
 
         # Compare data using ViewModel
         try:
