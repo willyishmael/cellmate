@@ -87,6 +87,7 @@ class AttendancePage(QWidget):
         btn_extract.setFixedHeight(40)
         btn_compare.setFixedHeight(40)
         btn_extract.clicked.connect(self.on_extract)
+        btn_compare.clicked.connect(self.on_compare)
         right_panel.addWidget(btn_extract)
         right_panel.addWidget(btn_compare)
         main_layout.addLayout(right_panel, 3)

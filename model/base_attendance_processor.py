@@ -1,6 +1,7 @@
 from openpyxl import load_workbook
 from datetime import datetime
 from pathlib import Path
+import re
 
 
 class BaseAttendanceProcessor:
@@ -90,19 +91,44 @@ class BaseAttendanceProcessor:
         """Return sheet objects based on settings.sheet_names."""
         if not self.hris_wb:
             raise ValueError("Workbook not loaded yet.")
-        if not self.sheet_names:
-            return [self.hris_wb.active]
-        return [self.hris_wb[s] for s in self.sheet_names if s in self.hris_wb.sheetnames]
+        return [self.hris_wb[s] for s in self.hris_wb.sheetnames]
 
     # Utility Methods
     def _format_date(self, value):
-        """Ensure date formatted as yyyy-mm-dd string."""
+        """Ensure date formatted as yyyy-mm-dd string.
+
+        Handles:
+        - datetime objects
+        - ISO-like 'YYYY-MM-DD' or 'YYYY/MM/DD'
+        - 'DD/MM/YYYY' and 'DD-MM-YYYY'
+        - 'DD/MM' (no year) -> assumes current year
+
+        Falls back to returning the original string if parsing fails.
+        """
         if isinstance(value, datetime):
             return value.strftime("%Y-%m-%d")
+
+        s = str(value).strip()
+
+        # Common full-date formats
+        for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+        # Handle day/month without year, e.g. '08/10' -> assume current year
         try:
-            return datetime.strptime(str(value), "%Y-%m-%d").strftime("%Y-%m-%d")
+            if re.match(r"^\d{1,2}/\d{1,2}$", s):
+                day_str, month_str = s.split("/")
+                year = datetime.now().year
+                dt = datetime(year=year, month=int(month_str), day=int(day_str))
+                return dt.strftime("%Y-%m-%d")
         except Exception:
-            return str(value)
+            pass
+
+        # Fallback: return original string
+        return s
 
     def _map_status(self, code: str):
         """Map attendance codes to descriptions and time ranges."""

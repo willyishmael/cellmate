@@ -20,8 +20,10 @@ class AttendanceComparator(BaseAttendanceProcessor):
         self.attendance_wb = self.load_attendance_wb(attendance_file)
         self.hris_wb = self.load_hris_wb(hris_file)
         output_dir = self.get_output_dir(attendance_file)
-        attendance_ws = self.get_attendance_source_sheets
+        attendance_ws = self.get_attendance_source_sheets()
         hris_ws = self.get_hris_source_sheets()
+        
+        print("Preparing target workbooks...")
         
         # Prepare target workbooks for each selected company code
         self.targets = {
@@ -29,7 +31,8 @@ class AttendanceComparator(BaseAttendanceProcessor):
             for code, checked in self.company_codes.items()
             if checked
         }
-        
+
+        print(f"Target workbooks prepared. Company codes: {list(self.targets.keys())}")
         # Process attendance and HRIS sheets
         for ws in attendance_ws:
             self._process_attendance_sheet(ws, date_start_str, date_end_str)
@@ -41,7 +44,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
         for code, twb in self.targets.items():
             print(f"Saving comparison output for company code: {code}")
             file_name = (
-                f"{date_start_str} HRIS Comparison.xlsx"
+                f"{date_start_str} {code} HRIS Comparison.xlsx"
                 if date_end_str == date_start_str
                 else f"{date_start_str} to {date_end_str} {code} Comparison.xlsx"
             )
@@ -183,8 +186,6 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 matched_record = next((d[key] for d in self.attendance_dict if key in d), None)
                 if matched_record:
                     # Compare and log differences
-                    self._log_differences(matched_record, status, date)
-                    
                     ws_target = self.targets[matched_record["company_code"]].active
                     ws_target.append([
                         matched_record["status"],
@@ -202,5 +203,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                     
                 else:
                     # Log missing attendance record
-                    self._log_missing_record(employee_id, employee_name, date, status)
+                    # self._log_missing_record(employee_id, employee_name, date, status)
+                    pass
+
         
