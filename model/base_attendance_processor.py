@@ -1,4 +1,4 @@
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from datetime import datetime
 from pathlib import Path
 import re
@@ -10,7 +10,7 @@ class BaseAttendanceProcessor:
     Handles normalization, workbook loading, and utility methods.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = {}
         self.attendance_wb = None
         self.hris_wb = None
@@ -59,7 +59,7 @@ class BaseAttendanceProcessor:
         return [x.strip() for x in value.split(",") if x.strip()]
 
     # File Handling
-    def load_attendance_wb(self, file_path: str):
+    def load_attendance_wb(self, file_path: str) -> Workbook:
         """Load Attendance Excel file."""
         path = Path(file_path)
         if not path.exists():

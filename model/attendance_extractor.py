@@ -98,28 +98,31 @@ class AttendanceExtractor(BaseAttendanceProcessor):
         
         # Process each row of data
         for row in range(start_row, last_data_row + 1):
-            employee_id = ws.cell(row=row, column=id_col).value
-            employee_name = ws.cell(row=row, column=name_col).value
-            company_code = ws.cell(row=row, column=company_code_col).value
-
-            if not employee_id or str(employee_id).strip() in self.ignore_list:
+            employee_id_raw = ws.cell(row=row, column=id_col).value
+            if not employee_id_raw:
                 continue
-
-            if company_code not in targets:
+            employee_id = str(employee_id_raw).strip()
+            employee_name = ws.cell(row=row, column=name_col).value.strip()
+            
+            company_code_raw = ws.cell(row=row, column=company_code_col).value
+            company_code = str(company_code_raw).strip()
+            if not company_code or company_code not in targets:
                 continue
 
             for col in range(start_col, end_col + 1):
                 code = ws.cell(row=row, column=col).value
+                date_raw = ws.cell(row=header_row, column=col).value
                 date = ws.cell(row=header_row, column=col).value
-                if not code or str(code).strip() == "" or not date:
+                if not code or date_raw is None :
                     continue
 
-                ws_target = targets[company_code].active
+                formatted_date = self._format_date(date_raw)
                 status, timein, timeout = self._map_status(code)
+                ws_target = targets[company_code].active
                 ws_target.append([
-                    self._format_date(date),
+                    formatted_date,
                     employee_id,
-                    employee_name if employee_name else "",
+                    employee_name or "",
                     status,
                     0,  # Overtime
                     timein,

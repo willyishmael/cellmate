@@ -11,7 +11,8 @@ class AttendanceComparator(BaseAttendanceProcessor):
     def __init__(self):
         super().__init__()
         self.formatter = ExportFileFormatter()
-        self.attendance_dict = []
+        self.attendance_index = {} # key -> record
+        self.duplicates = [] # optional list to collect duplicates
     
     def compare(self, settings: dict, date_start_str: str, date_end_str: str, attendance_file: str, hris_file: str):
         """Run the comparison process with given settings and files."""
@@ -119,25 +120,30 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 if not code or str(code).strip() == "" or not date:
                     continue
 
-                key = self._format_date(date)+ "_" + str(employee_id).strip()
+                formatted_date = self._format_date(date)
+                employee_id_str = str(employee_id).strip()
+
+                key = f"{formatted_date}_{employee_id_str}"
                 status, timein, timeout = self._map_status(code)
                 
-                if key not in [list(d.keys())[0] for d in self.attendance_dict]:
-                    self.attendance_dict.append({key: {
-                        "date": self._format_date(date),
-                        "employee_id": str(employee_id).strip(),
-                        "employee_name": employee_name if employee_name else "",
-                        "company_code": company_code,
-                        "status_code": code,
-                        "status": status,
-                        "overtime": 0,
-                        "timein": timein,
-                        "timeout": timeout,
-                        "keterangan": ""
-                    }})
+                record = {
+                    "date": formatted_date,
+                    "employee_id": employee_id_str,
+                    "employee_name": employee_name or "",
+                    "company_code": company_code,
+                    "status_code": code,
+                    "status": status,
+                    "overtime": 0,
+                    "timein": timein,
+                    "timeout": timeout,
+                    "keterangan": ""
+                }
+                
+                if key in self.attendance_index:
+                    self.duplicates.append(record)
                 else:
-                    # TODO: Send error message or something
-                    continue
+                    self.attendance_index[key] = record
+
                 
     def _process_hris_sheet(self, ws, date_start_str, date_end_str):
         print(f"Processing HRIS sheet: {ws.title}")
@@ -174,7 +180,6 @@ class AttendanceComparator(BaseAttendanceProcessor):
         # Process each row of data
         for row in range(start_row, ws.max_row + 1):
             employee_id = ws.cell(row=row, column=id_col).value
-            employee_name = ws.cell(row=row, column=name_col).value
 
             for col in range(start_col, end_col + 1):
                 date = ws.cell(row=1, column=col).value
@@ -182,16 +187,18 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 if not status or str(status).strip() == "" or not date:
                     continue
                 
-                key = self._format_date(date)+ "_" + str(employee_id).strip()
-                matched_record = next((d[key] for d in self.attendance_dict if key in d), None)
+                formatted_date = self._format_date(date)
+                employee_id_str = str(employee_id).strip()
+                key = f"{formatted_date}_{employee_id_str}"
+                matched_record = self.attendance_index.get(key)
+                
                 if matched_record:
-                    # Compare and log differences
                     ws_target = self.targets[matched_record["company_code"]].active
                     ws_target.append([
-                        matched_record["status"],
-                        status,
-                        matched_record["status"] == status,
-                        self._format_date(date),
+                        matched_record["status"], # Manual
+                        status, # HRIS
+                        matched_record["status"] == status, # Difference
+                        matched_record["date"],
                         matched_record["employee_id"],
                         matched_record["employee_name"],
                         matched_record["status"],
@@ -200,10 +207,5 @@ class AttendanceComparator(BaseAttendanceProcessor):
                         matched_record["timeout"],
                         matched_record["keterangan"]
                     ])
-                    
-                else:
-                    # Log missing attendance record
-                    # self._log_missing_record(employee_id, employee_name, date, status)
-                    pass
 
         
