@@ -1,0 +1,21 @@
+[
+  {
+    "name": "PLANT",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "7",
+      "date_header_row": "5",
+      "row_counter_column": "1",
+      "sheet_names": "26 SEP - 25 OKT 2025",
+      "ignore_list": "OBI-1072322, OBI-29771024"
+    }
+  }
+]
