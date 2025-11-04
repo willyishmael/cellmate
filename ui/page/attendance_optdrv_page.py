@@ -1,108 +1,85 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
-    QPushButton, QSpacerItem, QSizePolicy, QComboBox, QFormLayout,
-    QLineEdit, QCheckBox, QDateEdit, QTextEdit
+    QPushButton, QSpacerItem, QSizePolicy, QFormLayout, QCheckBox,
 )
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt
+from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.drop_area_view import DropArea
-from ui.widget.period_dropdown import PeriodDropdown
+from ui.widget.form_field_group import FormFieldGroup
+from ui.widget.multi_text_field_group import MultiTextFieldGroup
+from ui.widget.period_date_widget import PeriodDateWidget
+from ui.widget.template_bar import TemplateBar
 
 class AttendanceOptDrvPage(QWidget):
     def __init__(self, template_vm):
         super().__init__()
+        self.template_vm = template_vm
+        # self.attendance_vm = AttendanceOptDrvViewModel()
+        self.current_template_index = None
         main_layout = QHBoxLayout()
 
         # Left panel with two drop areas
         left_panel = QVBoxLayout()
-
         self.drop_area_1 = DropArea("Drop Attendance Excel File Here")
         self.drop_area_2 = DropArea("Drop HRIS Export Excel File Here")
-
-        left_panel.addWidget(self.drop_area_1, 1)  # stretch factor = 1
-        left_panel.addWidget(self.drop_area_2, 1)  # stretch factor = 1
-
-        main_layout.addLayout(left_panel, 2)  # stretch factor = 2
+        left_panel.addWidget(self.drop_area_1, 1)
+        left_panel.addWidget(self.drop_area_2, 1)
+        main_layout.addLayout(left_panel, 2)
 
         # Right panel (settings)
         right_panel = QVBoxLayout()
+        setting_label = QLabel("⚙ Settings")
+        setting_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        right_panel.addWidget(setting_label)
 
-        self.setting_label = QLabel("⚙ Settings")
-        self.setting_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        right_panel.addWidget(self.setting_label)
-
-        # 🔹 Template selection bar (dropdown + buttons)
-        template_bar = QHBoxLayout()
-
-        self.template_dropdown = QComboBox()
-        self.template_dropdown.addItem("Select Template")  # default placeholder
-        template_bar.addWidget(self.template_dropdown, 3)  # stretch factor = 3
-
-        self.btn_save = QPushButton("💾 Save")
-        self.btn_new = QPushButton("➕ New")
-        self.btn_delete = QPushButton("🗑 Delete")
-
-        template_bar.addWidget(self.btn_save, 1)
-        template_bar.addWidget(self.btn_new, 1)
-        template_bar.addWidget(self.btn_delete, 1)
-
-        right_panel.addLayout(template_bar)
-
+        # Template selection bar (refactored)
+        self.template_bar = TemplateBar(self.on_template_selected)
+        self.template_bar.btn_save.clicked.connect(self.on_save_template)
+        self.template_bar.btn_new.clicked.connect(self.on_new_template)
+        
+        # Wrap TemplateBar (QHBoxLayout) in QWidget for addLayout compatibility
+        template_bar_widget = QWidget()
+        template_bar_widget.setLayout(self.template_bar)
+        right_panel.addWidget(template_bar_widget)
+        
         # Form layout for labeled fields
         form_layout = QFormLayout()
-        form_layout.setLabelAlignment(Qt.AlignRight)  # Labels aligned neatly on right
+        form_layout.setLabelAlignment(Qt.AlignRight)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         form_layout.setFormAlignment(Qt.AlignTop)
         form_layout.setHorizontalSpacing(15)
         form_layout.setVerticalSpacing(15)
 
         # Add period dropdown
-        self.period_dropdown = PeriodDropdown()
-        self.period_dropdown.setFixedHeight(28)  # Set height to 28
-        form_layout.addRow("Period:", self.period_dropdown)
+        self.period_date_widget = PeriodDateWidget()
+        form_layout.addRow(self.period_date_widget)
+    
+        # Add company codes checkbox layout
+        self.company_codes_layout = CompanyCodeCheckbox()
+        form_layout.addRow("Company Codes:", self.company_codes_layout)
 
-        # Add date pickers for start and end dates
-        self.start_date_picker = QDateEdit()
-        self.end_date_picker = QDateEdit()
-        self.configure_date_picker(self.start_date_picker)
-        self.configure_date_picker(self.end_date_picker)
-
-        self.start_date_picker.setFixedHeight(28)  # Set height to 28
-        self.end_date_picker.setFixedHeight(28)  # Set height to 28
-
-        form_layout.addRow("Start Date:", self.start_date_picker)
-        form_layout.addRow("End Date:", self.end_date_picker)
-
-        company_codes_layout = QHBoxLayout()
-        company_codes_layout.setAlignment(Qt.AlignLeft)
-        self.checkbox_pm = QCheckBox("PM")
-        self.checkbox_ptm = QCheckBox("PTM")
-        self.checkbox_tmp = QCheckBox("TMP")
-        company_codes_layout.addWidget(self.checkbox_pm)
-        company_codes_layout.addWidget(self.checkbox_ptm)
-        company_codes_layout.addWidget(self.checkbox_tmp)
-        form_layout.addRow("Company Codes:", company_codes_layout)
-
-        # Add fields for user input
-        form_layout.addRow("Employee ID Column:", self.create_field("Enter Employee ID Column Index (e.g., 5)"))
-        form_layout.addRow("Employee Name Column:", self.create_field("Enter Employee Name Column Index (e.g., 6)"))
-        form_layout.addRow("Company Code Column:", self.create_field("Enter Company Code Column Index (e.g., 7)"))
-        form_layout.addRow("Data Start Row:", self.create_field("Enter Data Start Row Index (e.g., 2)"))
-        form_layout.addRow("Date Header Row:", self.create_field("Enter Date Header Row Index (e.g., 1)"))
-        form_layout.addRow("Row Counter Column:", self.create_field("Enter Row Counter Column Index (e.g., 3)"))
-
-        self.sheet_names_text_edit = QTextEdit()
-        # Suggestion: Clarify placeholder text to indicate format
-        self.sheet_names_text_edit.setPlaceholderText("Enter sheet names separated by commas (e.g., Sheet1, Sheet2)")
-        self.sheet_names_text_edit.setFixedHeight(60)  # Set height to 60
-        form_layout.addRow("Sheet Names:", self.sheet_names_text_edit)
-
+        # Setup form field groups
+        field_configs = {
+            "Employee ID Column": "Enter Employee ID Column Index (e.g., 5)",
+            "Employee Name Column": "Enter Employee Name Column Index (e.g., 6)",
+            "Company Code Column": "Enter Company Code Column Index (e.g., 7)",
+            "Data Start Row": "Enter Data Start Row Index (e.g., 2)",
+            "Date Header Row": "Enter Date Header Row Index (e.g., 1)",
+            "Row Counter Column": "Enter Row Counter Column Index (e.g., 3)",
+        }
+        self.form_field_group = FormFieldGroup(field_configs, form_layout)
+        
+        # Setup multi-line text field group
+        edit_text_configs = {
+            "Sheet Names": "Enter sheet names separated by commas (e.g., Sheet1, Sheet2)",
+        }
+        self.multi_text_field_group = MultiTextFieldGroup(edit_text_configs, form_layout)
+        
         # Add "Time Off Only?" checkbox
         self.checkbox_time_off_only = QCheckBox("Time Off Only")
         form_layout.addRow("", self.checkbox_time_off_only)
-
+        
         right_panel.addLayout(form_layout)
-
-        # Add spacer so button goes to bottom
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # Action button
@@ -110,23 +87,38 @@ class AttendanceOptDrvPage(QWidget):
         btn_compare = QPushButton("🔍 Compare Data")
         btn_extract.setFixedHeight(40)
         btn_compare.setFixedHeight(40)
+        btn_extract.clicked.connect(self.on_extract)
+        btn_compare.clicked.connect(self.on_compare)
         right_panel.addWidget(btn_extract)
         right_panel.addWidget(btn_compare)
-
-        # Add right panel to main layout
-        main_layout.addLayout(right_panel, 3)  # stretch factor = 3
+        main_layout.addLayout(right_panel, 3)
 
         self.setLayout(main_layout)
+        
+        # Connect signal to update dropdown automatically
+        self.template_vm.templates_changed.connect(self.load_templates_to_dropdown)
+        self.load_templates_to_dropdown()
 
-    def create_field(self, placeholder):
-        """Helper method to create a plain input field for QFormLayout."""
-        field = QLineEdit()
-        field.setPlaceholderText(placeholder)
-        field.setFixedHeight(28)
-        return field
+    def on_template_selected(self, index):
+        # TODO: Implement template selection logic
+        pass
+    
+    def on_save_template(self):
+        # TODO: Implement save template logic
+        pass
 
-    def configure_date_picker(self, date_picker):
-        """Configure a date picker to default to yesterday's date."""
-        yesterday = QDate.currentDate().addDays(-1)
-        date_picker.setDate(yesterday)
-        date_picker.setCalendarPopup(True)  # Enable calendar popup for easier selection
+    def on_new_template(self):
+        # TODO: Implement new template logic
+        pass
+    
+    def on_extract(self):
+        # TODO: Implement extract logic
+        pass
+    
+    def on_compare(self):
+        # TODO: Implement compare logic
+        pass
+    
+    def load_templates_to_dropdown(self):
+        # TODO: Implement loading templates to dropdown logic
+        pass
