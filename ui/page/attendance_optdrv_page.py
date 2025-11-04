@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
     QPushButton, QSpacerItem, QSizePolicy, QFormLayout, QCheckBox,
+    QMessageBox, QInputDialog
 )
 from PySide6.QtCore import Qt
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
@@ -9,13 +10,16 @@ from ui.widget.form_field_group import FormFieldGroup
 from ui.widget.multi_text_field_group import MultiTextFieldGroup
 from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.template_bar import TemplateBar
+from view_model.template_view_model import TemplateViewModel
 
 class AttendanceOptDrvPage(QWidget):
-    def __init__(self, template_vm):
+    def __init__(self, template_vm: TemplateViewModel):
         super().__init__()
         self.template_vm = template_vm
         # self.attendance_vm = AttendanceOptDrvViewModel()
         self.current_template_index = None
+        self.attendance_templates = []
+        self.template_type = "attendance-optdrv"
         main_layout = QHBoxLayout()
 
         # Left panel with two drop areas
@@ -98,18 +102,103 @@ class AttendanceOptDrvPage(QWidget):
         # Connect signal to update dropdown automatically
         self.template_vm.templates_changed.connect(self.load_templates_to_dropdown)
         self.load_templates_to_dropdown()
+        
+    def load_templates_to_dropdown(self):
+        dropdown = self.template_bar.template_dropdown
+        dropdown.blockSignals(True)
+        dropdown.clear()
+        dropdown.addItem("Select Template")
+        self.attendance_templates = self.template_vm.get_templates(template_type=self.template_type)
+        for t in self.attendance_templates:
+            dropdown.addItem(t.name)
+        dropdown.blockSignals(False)
 
     def on_template_selected(self, index):
-        # TODO: Implement template selection logic
-        pass
-    
+        if index <= 0:
+            self.current_template_index = None
+            self._clear_fields()
+            return
+        
+        self.current_template_index = index - 1
+        template = self.attendance_templates[self.current_template_index]
+        self._load_settings_to_fields(template.settings)
+
+    def _clear_fields(self):
+        self.company_codes_layout.clear_checked()
+        self.form_field_group.clear_fields()
+        self.multi_text_field_group.clear_fields()
+        self.checkbox_time_off_only.setChecked(False)
+        
+    def _load_settings_to_fields(self, template):
+        self.company_codes_layout.load_settings(template)
+        self.form_field_group.load_settings(template)
+        self.multi_text_field_group.load_settings(template)
+        self.checkbox_time_off_only.setChecked(template["time_off_only"])
+        
     def on_save_template(self):
-        # TODO: Implement save template logic
-        pass
+        dropdown = self.template_bar.template_dropdown
+        index = dropdown.currentIndex()
+        if index <= 0 or self.current_template_index is None:
+            return
+        
+        name = dropdown.currentText()
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Overwrite",
+            f"Are you sure you want to overwrite the template '{name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if confirm != QMessageBox.Yes:
+            return
+
+        settings = self.collect_settings_from_fields()
+        self.template_vm.update_template(
+            self.current_template_index, 
+            name=name, 
+            template_type=self.template_type, 
+            settings=settings
+        )
+        self.load_templates_to_dropdown()
+        dropdown.setCurrentIndex(index)
 
     def on_new_template(self):
-        # TODO: Implement new template logic
-        pass
+        name, ok = QInputDialog.getText(self, "New Template", "Enter template name:")
+        if not ok or not name.strip():
+            return
+        settings = self.collect_settings_from_fields()
+        self.template_vm.add_template(name.strip(), self.template_type, settings)
+        self.load_templates_to_dropdown()
+        # Optionally select the new template in dropdown
+        dropdown = self.template_bar.template_dropdown
+        for i in range(dropdown.count()):
+            if dropdown.itemText(i) == name.strip():
+                dropdown.setCurrentIndex(i)
+                break
+            
+    def collect_settings_from_fields(self):
+        settings = {}
+        
+        validated_company_codes, validated_company_codes_message = self.company_codes_layout.has_checked_codes()
+        if not validated_company_codes:
+            QMessageBox.warning(self, "Warning", validated_company_codes_message)
+            return {}
+        
+        validated_form_fields, validated_form_message = self.form_field_group.validate_fields()
+        if not validated_form_fields:
+            QMessageBox.warning(self, "Warning", validated_form_message)
+            return {}
+
+        validated_multi_text, validated_multi_text_message = self.multi_text_field_group.validate_fields()
+        if not validated_multi_text:
+            QMessageBox.warning(self, "Warning", validated_multi_text_message)
+            return {}
+
+        settings.update(self.company_codes_layout.get_company_codes())
+        settings.update(self.form_field_group.get_field_values())    
+        settings.update(self.multi_text_field_group.get_field_values())
+        settings.update({"time_off_only": self.checkbox_time_off_only.isChecked()})
+        return settings
     
     def on_extract(self):
         # TODO: Implement extract logic
@@ -117,8 +206,4 @@ class AttendanceOptDrvPage(QWidget):
     
     def on_compare(self):
         # TODO: Implement compare logic
-        pass
-    
-    def load_templates_to_dropdown(self):
-        # TODO: Implement loading templates to dropdown logic
         pass
