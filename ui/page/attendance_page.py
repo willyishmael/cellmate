@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
     QSpacerItem, QSizePolicy, QFormLayout, 
-    QPushButton, QInputDialog, QMessageBox
+    QPushButton, QInputDialog, QMessageBox, QCheckBox
 )
 
 from PySide6.QtCore import Qt
@@ -12,15 +12,19 @@ from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.form_field_group import FormFieldGroup
 from ui.widget.multi_text_field_group import MultiTextFieldGroup
 from view_model.attendance_view_model import AttendanceViewModel
+from model.template_model import Template
+from view_model.template_view_model import TemplateViewModel
 
 class AttendancePage(QWidget):
-    def __init__(self, template_vm):
+    def __init__(self, template_vm: TemplateViewModel):
         super().__init__()
         self.template_vm = template_vm
         self.attendance_vm = AttendanceViewModel()
         self.current_template_index = None
+        self.template_type = "attendance"
+        self.attendance_templates = []
         main_layout = QHBoxLayout()
-
+        
         # Left panel with two drop areas
         left_panel = QVBoxLayout()
         self.drop_area_1 = DropArea("Drop Attendance Excel File Here")
@@ -79,6 +83,10 @@ class AttendancePage(QWidget):
         }
         self.multi_text_field_group = MultiTextFieldGroup(edit_text_configs, form_layout)
 
+        # Add "Time Off Only?" checkbox
+        self.checkbox_time_off_only = QCheckBox("Time Off Only")
+        form_layout.addRow("", self.checkbox_time_off_only)
+
         right_panel.addLayout(form_layout)
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
@@ -98,17 +106,38 @@ class AttendancePage(QWidget):
         self.template_vm.templates_changed.connect(self.load_templates_to_dropdown)
         self.load_templates_to_dropdown()
         
-    # Handle template selection
+    def load_templates_to_dropdown(self):
+        dropdown = self.template_bar.template_dropdown
+        dropdown.blockSignals(True)
+        dropdown.clear()
+        dropdown.addItem("Select Template")
+        self.attendance_templates = self.template_vm.get_templates(template_type=self.template_type)
+        for t in self.attendance_templates:
+            dropdown.addItem(t.name)
+        dropdown.blockSignals(False)
+        
     def on_template_selected(self, index):
         if index <= 0:
             self.current_template_index = None
-            self.clear_settings_fields()
+            self._clear_fields()
             return
         
-        # Load selected template settings into form fields
         self.current_template_index = index - 1
-        template = self.attendance_templates[self.current_template_index]
-        self.load_settings_to_fields(template.settings)    
+        template: Template = self.attendance_templates[self.current_template_index]
+        self._load_settings_to_fields(template)
+
+    def _clear_fields(self):
+        self.company_codes_layout.clear_checked()
+        self.form_field_group.clear_fields()        
+        self.multi_text_field_group.clear_fields()
+        self.checkbox_time_off_only.setChecked(False)
+        
+    def _load_settings_to_fields(self, template: Template):
+        settings = template.settings
+        self.company_codes_layout.load_settings(settings)
+        self.form_field_group.load_settings(settings)
+        self.multi_text_field_group.load_settings(settings)
+        self.checkbox_time_off_only.setChecked(settings["time_off_only"])
 
     # Save current form values to the selected template
     def on_save_template(self):
@@ -133,28 +162,20 @@ class AttendancePage(QWidget):
         self.load_templates_to_dropdown()
         dropdown.setCurrentIndex(index)
 
-    # Create a new template from current form values
     def on_new_template(self):
         name, ok = QInputDialog.getText(self, "New Template", "Enter template name:")
         if not ok or not name.strip():
             return
         settings = self.collect_settings_from_fields()
-        self.template_vm.add_template(name.strip(), "attendance", settings)
+        self.template_vm.add_template(name.strip(), self.template_type, settings)
         self.load_templates_to_dropdown()
-        # Optionally select the new template in dropdown
+        
         dropdown = self.template_bar.template_dropdown
         for i in range(dropdown.count()):
             if dropdown.itemText(i) == name.strip():
                 dropdown.setCurrentIndex(i)
                 break
 
-    # Load settings dict into form fields
-    def load_settings_to_fields(self, settings):
-        self.company_codes_layout.load_settings(settings)
-        self.form_field_group.load_settings(settings)
-        self.multi_text_field_group.load_settings(settings)
-
-    # Gather all form field values into a settings dict
     def collect_settings_from_fields(self):
         settings = {}
         
@@ -176,24 +197,8 @@ class AttendancePage(QWidget):
         settings.update(self.company_codes_layout.get_company_codes())
         settings.update(self.form_field_group.get_field_values())    
         settings.update(self.multi_text_field_group.get_field_values())
+        settings.update({"time_off_only": self.checkbox_time_off_only.isChecked()})
         return settings
-    
-    # Load templates from ViewModel into dropdown
-    def load_templates_to_dropdown(self):
-        dropdown = self.template_bar.template_dropdown
-        dropdown.blockSignals(True)
-        dropdown.clear()
-        dropdown.addItem("Select Template")
-        self.attendance_templates = self.template_vm.get_templates(template_type="attendance")
-        for t in self.attendance_templates:
-            dropdown.addItem(t.name)
-        dropdown.blockSignals(False)
-
-    # Clear all form fields
-    def clear_settings_fields(self):
-        self.company_codes_layout.clear_checked()
-        self.form_field_group.clear_fields()        
-        self.multi_text_field_group.clear_fields()
 
     def on_extract(self):
         settings = self.collect_settings_from_fields()
@@ -213,8 +218,11 @@ class AttendancePage(QWidget):
         
         # Extract data using ViewModel
         try:
-            self.attendance_vm.extract_attendance(settings, date_start_str, date_end_str, file)
-            QMessageBox.information(self, "Success", "Data extraction completed successfully.")
+            result = self.attendance_vm.extract_attendance(settings, date_start_str, date_end_str, file)
+            if result.success:
+                QMessageBox.information(self, "Success", "Data extraction completed successfully.")
+            else:
+                QMessageBox.warning(self, "Warning", f"Data extraction failed: {result.message}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")
             
@@ -244,8 +252,11 @@ class AttendancePage(QWidget):
 
         # Compare data using ViewModel
         try:
-            self.attendance_vm.compare_attendance(settings, date_start_str, date_end_str, attendance_file, hris_file)
-            QMessageBox.information(self, "Success", "Data comparison completed successfully.")
+            result = self.attendance_vm.compare_attendance(settings, date_start_str, date_end_str, attendance_file, hris_file)
+            if result.success:
+                QMessageBox.information(self, "Success", "Data comparison completed successfully.")
+            else:
+                QMessageBox.warning(self, "Warning", f"Data comparison failed: {result.message}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred during comparison: {str(e)}")
     
