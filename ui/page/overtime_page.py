@@ -51,7 +51,7 @@ class OvertimePage(QWidget):
         # Wrap template_bar into Widget
         template_bar_widget = QWidget()
         template_bar_widget.setLayout(self.template_bar)
-        right_panel.addWidget
+        right_panel.addWidget(template_bar_widget)
         
         form_layout = QFormLayout()
         form_layout.setLabelAlignment(Qt.AlignRight)
@@ -148,7 +148,7 @@ class OvertimePage(QWidget):
             return
 
         settings = self.collect_settings_from_fields()
-        self.template_vm.update_template(self.current_template_index, name=name, template_type="attendance", settings=settings)
+        self.template_vm.update_template(self.current_template_index, name=name, template_type=self.template_type, settings=settings)
         self.load_templates_to_dropdown()
         dropdown.setCurrentIndex(index)
 
@@ -207,7 +207,7 @@ class OvertimePage(QWidget):
         
         # Extract data using ViewModel
         try:
-            result = self.overtime_vm.extract_attendance(settings, date_start_str, date_end_str, file)
+            result = self.overtime_vm.extract_overtime(settings, date_start_str, date_end_str, file)
             if result.success:
                 QMessageBox.information(self, "Success", "Data extraction completed successfully.")
             else:
