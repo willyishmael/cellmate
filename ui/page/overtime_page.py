@@ -148,7 +148,12 @@ class OvertimePage(QWidget):
             return
 
         settings = self.collect_settings_from_fields()
-        self.template_vm.update_template(self.current_template_index, name=name, template_type=self.template_type, settings=settings)
+        self.template_vm.update_template(
+            identifier={"name": name, "template_type": self.template_type}, 
+            name=name, 
+            template_type=self.template_type, 
+            settings=settings)
+        
         self.load_templates_to_dropdown()
         dropdown.setCurrentIndex(index)
 
@@ -156,7 +161,11 @@ class OvertimePage(QWidget):
         name, ok = QInputDialog.getText(self, "New Template", "Enter template name:")
         if not ok or not name.strip():
             return
+        
         settings = self.collect_settings_from_fields()
+        if settings == {}:
+            return
+        
         self.template_vm.add_template(name.strip(), self.template_type, settings)
         self.load_templates_to_dropdown()
         

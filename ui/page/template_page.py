@@ -1,15 +1,15 @@
-
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QTableWidget, QTableWidgetItem, QTextEdit, QFileDialog, 
     QMessageBox, QInputDialog, QAbstractItemView, QHeaderView
 )
+
 from PySide6.QtCore import Qt
 import json
 from view_model.template_view_model import TemplateViewModel
 
 class TemplatePage(QWidget):
-    def __init__(self, template_vm):
+    def __init__(self, template_vm: TemplateViewModel):
         super().__init__()
         self.vm = template_vm
         
@@ -107,9 +107,18 @@ class TemplatePage(QWidget):
         if ok:
             try:
                 data = json.loads(text)
-                self.vm.update_template(current, name=data.get('name'), template_type=data.get('template_type'), settings=data.get('settings'))
+                # Use dict identifier (name + template_type) to locate the template
+                identifier = {"name": template.name, "template_type": template.template_type}
+                self.vm.update_template(identifier, name=data.get('name'), template_type=data.get('template_type'), settings=data.get('settings'))
+                # Refresh and attempt to re-select the updated template (by new name/type)
                 self.refresh_table()
-                self.template_table.selectRow(current)
+                new_name = data.get('name') or template.name
+                new_type = data.get('template_type') or template.template_type
+                for row in range(self.template_table.rowCount()):
+                    if (self.template_table.item(row, 0).text() == new_name and
+                            self.template_table.item(row, 1).text() == new_type):
+                        self.template_table.selectRow(row)
+                        break
             except Exception as e:
                 QMessageBox.critical(self, "Invalid JSON", str(e))
 
@@ -118,11 +127,24 @@ class TemplatePage(QWidget):
         if current < 0:
             QMessageBox.warning(self, "No Selection", "Select a template to delete.")
             return
+        
         template = self.vm.get_templates()[current]
         reply = QMessageBox.question(self, "Delete Template", f"Delete template '{template.name}'?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.vm.delete_template(current)
+            try:
+                self.vm.delete_template({"name": template.name, "template_type": template.template_type})
+            except Exception as e:
+                QMessageBox.critical(self, "Delete Failed", str(e))
+                return
+            # Refresh table and select previous row if possible
             self.refresh_table()
+            row_count = self.template_table.rowCount()
+            if row_count == 0:
+                self.template_details.clear()
+                return
+            # try to keep selection at the same index, or move to last row
+            sel = min(current, row_count - 1)
+            self.template_table.selectRow(sel)
 
     def export_templates(self):
         path, _ = QFileDialog.getSaveFileName(self, "Export Templates", "templates_export.json", "JSON Files (*.json)")

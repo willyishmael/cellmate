@@ -1,6 +1,6 @@
 from openpyxl import Workbook
 from model.helper.export_file_formatter import ExportFileFormatter
-from model.base_attendance_processor import BaseAttendanceProcessor
+from model.attendance.base_attendance_processor import BaseAttendanceProcessor
 
 class AttendanceExtractor(BaseAttendanceProcessor):
     """Class to handle attendance extraction from Excel files."""
