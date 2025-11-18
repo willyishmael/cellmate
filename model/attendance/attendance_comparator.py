@@ -1,4 +1,5 @@
 from openpyxl import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.attendance.base_attendance_processor import BaseAttendanceProcessor
 
@@ -64,7 +65,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
         ws.append(headers)
         return wb
     
-    def _process_attendance_sheet(self, ws, date_start_str, date_end_str):
+    def _process_attendance_sheet(self, ws: Worksheet, date_start_str, date_end_str):
         print(f"Processing attendance sheet: {ws.title}")
         
         # Find last non-empty cell in row_counter_col, from bottom up
@@ -136,7 +137,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                     "overtime": 0,
                     "timein": timein,
                     "timeout": timeout,
-                    "keterangan": ""
+                    "notes": ""
                 }
                 
                 if key in self.attendance_index:
@@ -145,7 +146,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                     self.attendance_index[key] = record
 
                 
-    def _process_hris_sheet(self, ws, date_start_str, date_end_str):
+    def _process_hris_sheet(self, ws: Worksheet, date_start_str, date_end_str):
         print(f"Processing HRIS sheet: {ws.title}")
         
         start_row = 2
@@ -205,7 +206,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                         matched_record["overtime"],
                         matched_record["timein"],
                         matched_record["timeout"],
-                        matched_record["keterangan"]
+                        matched_record["notes"]
                     ])
 
         

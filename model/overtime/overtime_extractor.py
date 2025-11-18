@@ -10,7 +10,6 @@ class OvertimeExtractor(BaseOvertimeProcessor):
     ):
         super().__init__()
         self.formatter = formatter
-        self.formatter = formatter
         
     def extract(
         self,
@@ -51,7 +50,7 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             print(f"Saved {out_path.name}")
         
         
-        # Internal Helpers
+    # Internal Helpers
     def _init_target_sheet(self, company_code):
         wb = Workbook()
         ws = wb.active
