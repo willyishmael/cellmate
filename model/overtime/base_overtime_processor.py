@@ -19,7 +19,6 @@ class BaseOvertimeProcessor():
         Apply or update settings before running processing.
         Should be called every time before extract/compare.
         """
-        print("BaseOvertimeProcessor: Applying settings.")
         if not isinstance(settings, dict):
             raise ValueError("Settings must be a dictionary.")
         self.settings = settings
@@ -51,7 +50,6 @@ class BaseOvertimeProcessor():
     
     def load_overtime_wb(self, file_path: str) -> Workbook:
         """Load Overtime Excel file."""
-        print(f"BaseOvertimeProcessor: Loading overtime workbook from: {file_path}")
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
@@ -72,7 +70,6 @@ class BaseOvertimeProcessor():
     
     def get_overtime_source_sheet(self) -> list[Worksheet]:
         """Return sheet objects based on settings.sheet_names."""
-        print(f"BaseOvertimeProcessor: Getting overtime source sheets: {self.sheet_names}")
         if not self.overtime_wb:
             raise ValueError("Overtime workbook is not loaded.")
         
@@ -106,6 +103,13 @@ class BaseOvertimeProcessor():
 
         # Common full-date formats
         for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+        # Handle day-month with abbreviated or full month name, e.g. '26-Oct-2025' or '26-October-2025'
+        for fmt in ("%d-%b-%Y", "%d-%B-%Y", "%d %b %Y", "%d %B %Y"):
             try:
                 return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
             except Exception:

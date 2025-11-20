@@ -1,11 +1,10 @@
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 
 class ExportFileFormatter:
     
-    def format_worksheet(self, ws):
-        print(f"Formatting sheet: {ws.title}")
-        
+    def format_worksheet(self, ws: Worksheet):
         # Auto-fit columns
         for col in ws.columns:
             max_length = 0

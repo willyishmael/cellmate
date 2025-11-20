@@ -1,3 +1,4 @@
+from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
@@ -5,9 +6,9 @@ from model.overtime.base_overtime_processor import BaseOvertimeProcessor
 from model.helper.save_utils import save_workbook_with_fallback
 
 class OvertimeComparator(BaseOvertimeProcessor):
-    def __init__(self):
+    def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
-        self.formatter = ExportFileFormatter
+        self.formatter = formatter or ExportFileFormatter()
         self.overtime_index: dict[str, dict] = {}  # key -> record
         self.duplicates: dict[str, list[dict]] = {}  # optional dict to collect duplicates
         self.no_pair: dict[str, dict] = {}  # optional dict to collect no pair records
@@ -19,7 +20,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
         date_end_str: str,
         overtime_file: str,
         hris_file: str
-    ):
+    ) -> None:
         self.apply_settings(settings)
         self.overtime_wb = self.load_overtime_wb(overtime_file)
         self.hris_wb = self.load_hris_wb(hris_file)
@@ -46,16 +47,16 @@ class OvertimeComparator(BaseOvertimeProcessor):
         for code, twb in self.targets.items():
             print(f"Saving comparison output for company code: {code}")
             file_name = (
-                f"{date_start_str} {code} HRIS Comparison.xlsx"
+                f"{date_start_str} {code} Overtime Comparison.xlsx"
                 if date_end_str == date_start_str
-                else f"{date_start_str} to {date_end_str} {code} HRIS Comparison.xlsx"
+                else f"{date_start_str} to {date_end_str} {code} Overtime Comparison.xlsx"
             )
             out_path = output_dir / file_name
-            self.formatter.format_worksheet(twb.active)
+            self.formatter.format_worksheet(ws=twb.active)
             save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
             
-    def _init_target_sheet(self, company_code):
+    def _init_target_sheet(self, company_code: str) -> Workbook:
         wb = Workbook()
         ws = wb.active
         ws.title = company_code
@@ -71,7 +72,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
         targets: dict[str, Workbook], 
         date_start_str: str, 
         date_end_str: str
-    ):
+    ) -> None:
         
         # Determine company code by ws title
         ws_title = ws.title
@@ -121,7 +122,6 @@ class OvertimeComparator(BaseOvertimeProcessor):
                 
             # Parse date as a date object and compare ranges using dates
             formatted_date = self._format_date(date)
-            print(f"Formatted date: {formatted_date}")
             parsed_date = self._try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
             if parsed_date is None:
                 continue
@@ -134,11 +134,9 @@ class OvertimeComparator(BaseOvertimeProcessor):
                 end_dt = parsed_date
 
             if not (start_dt <= parsed_date <= end_dt):
-                print(f"row: {row} skipped, date are not valid")
                 continue
                 
             if not shift or not overtime or not overtime_hours:
-                print(f"row: {row} skipped, shift or overtime value is not valid")
                 continue
                 
             # Update persistent variables if current row has new values
@@ -183,8 +181,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
         ws: Worksheet,
         date_start_str: str, 
         date_end_str: str
-    ):
-        
+    ) -> None:
         print(f"Processing HRIS sheet: {ws.title}")
         
         start_row = 2
