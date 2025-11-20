@@ -1,7 +1,9 @@
+from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.attendance.base_attendance_processor import BaseAttendanceProcessor
+from model.helper.save_utils import save_workbook_with_fallback
 
 class AttendanceComparator(BaseAttendanceProcessor):
     """
@@ -9,13 +11,20 @@ class AttendanceComparator(BaseAttendanceProcessor):
     Outputs differences such as missing uploads or mismatched attendance codes.
     """
     
-    def __init__(self):
+    def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
-        self.formatter = ExportFileFormatter()
+        self.formatter = formatter or ExportFileFormatter()
         self.attendance_index = {} # key -> record
         self.duplicates = [] # optional list to collect duplicates
     
-    def compare(self, settings: dict, date_start_str: str, date_end_str: str, attendance_file: str, hris_file: str):
+    def compare(
+        self, 
+        settings: dict, 
+        date_start_str: str, 
+        date_end_str: str, 
+        attendance_file: str,
+        hris_file: str
+    ) -> None:
         """Run the comparison process with given settings and files."""
         print("Starting comparison process...")
         self.apply_settings(settings)
@@ -52,11 +61,11 @@ class AttendanceComparator(BaseAttendanceProcessor):
             )
             out_path = output_dir / file_name
             self.formatter.format_worksheet(twb.active)
-            twb.save(out_path)
+            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
     
     # Internal Helpers
-    def _init_target_sheet(self, company_code):
+    def _init_target_sheet(self, company_code) -> Workbook:
         wb = Workbook()
         ws = wb.active
         ws.title = company_code
@@ -65,7 +74,12 @@ class AttendanceComparator(BaseAttendanceProcessor):
         ws.append(headers)
         return wb
     
-    def _process_attendance_sheet(self, ws: Worksheet, date_start_str, date_end_str):
+    def _process_attendance_sheet(
+        self, 
+        ws: Worksheet, 
+        date_start_str: str, 
+        date_end_str: str
+    ) -> None:
         print(f"Processing attendance sheet: {ws.title}")
         
         # Find last non-empty cell in row_counter_col, from bottom up
@@ -146,7 +160,12 @@ class AttendanceComparator(BaseAttendanceProcessor):
                     self.attendance_index[key] = record
 
                 
-    def _process_hris_sheet(self, ws: Worksheet, date_start_str, date_end_str):
+    def _process_hris_sheet(
+        self, 
+        ws: Worksheet, 
+        date_start_str: str, 
+        date_end_str: str
+    ) -> None:
         print(f"Processing HRIS sheet: {ws.title}")
         
         start_row = 2

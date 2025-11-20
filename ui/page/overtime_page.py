@@ -1,3 +1,4 @@
+from typing import Optional
 from PySide6.QtWidgets import (
     QLabel, QVBoxLayout, QHBoxLayout, QWidget, 
     QPushButton, QSpacerItem, QSizePolicy, QFormLayout,
@@ -18,12 +19,12 @@ from view_model.template_view_model import TemplateViewModel
 class OvertimePage(QWidget):
     def __init__(
         self, 
-        template_vm: TemplateViewModel = TemplateViewModel(),
-        overtime_vm: OvertimeViewModel = OvertimeViewModel()
+        template_vm: Optional[TemplateViewModel] = None,
+        overtime_vm: Optional[OvertimeViewModel] = None
     ):
         super().__init__()
-        self.template_vm = template_vm
-        self.overtime_vm = overtime_vm
+        self.template_vm = template_vm or TemplateViewModel()
+        self.overtime_vm = overtime_vm or OvertimeViewModel()
         self.current_template_index = None
         self.template_type = "overtime"
         self.overtime_templates = []
@@ -216,6 +217,7 @@ class OvertimePage(QWidget):
         
         # Extract data using ViewModel
         try:
+            print(f"Overtime Page: on_extract called with file: {file}")
             result = self.overtime_vm.extract_overtime(settings, date_start_str, date_end_str, file)
             if result.success:
                 QMessageBox.information(self, "Success", "Data extraction completed successfully.")
@@ -240,7 +242,7 @@ class OvertimePage(QWidget):
             QMessageBox.warning(self, "Warning", hris_file_message)
             return
         
-        attendance_file = self.drop_area_1.file_path
+        overtime_file = self.drop_area_1.file_path
         hris_file = self.drop_area_2.file_path
         
         date_start = self.period_date_widget.start_date_picker.date()
@@ -250,7 +252,7 @@ class OvertimePage(QWidget):
 
         # Compare data using ViewModel
         try:
-            result = self.overtime_vm.compare_overtime(settings, date_start_str, date_end_str, attendance_file, hris_file)
+            result = self.overtime_vm.compare_overtime(settings, date_start_str, date_end_str, overtime_file, hris_file)
             if result.success:
                 QMessageBox.information(self, "Success", "Data comparison completed successfully.")
             else:

@@ -2,15 +2,12 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.overtime.base_overtime_processor import BaseOvertimeProcessor
-
+from model.helper.save_utils import save_workbook_with_fallback
 
 class OvertimeComparator(BaseOvertimeProcessor):
-    def __init__(
-        self,
-        formatter: ExportFileFormatter = ExportFileFormatter()
-    ):
+    def __init__(self):
         super().__init__()
-        self.formatter = formatter
+        self.formatter = ExportFileFormatter
         self.overtime_index: dict[str, dict] = {}  # key -> record
         self.duplicates: dict[str, list[dict]] = {}  # optional dict to collect duplicates
         self.no_pair: dict[str, dict] = {}  # optional dict to collect no pair records
@@ -55,7 +52,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
             )
             out_path = output_dir / file_name
             self.formatter.format_worksheet(twb.active)
-            twb.save(out_path)
+            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
             
     def _init_target_sheet(self, company_code):
@@ -124,6 +121,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
                 
             # Parse date as a date object and compare ranges using dates
             formatted_date = self._format_date(date)
+            print(f"Formatted date: {formatted_date}")
             parsed_date = self._try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
             if parsed_date is None:
                 continue

@@ -1,3 +1,4 @@
+from typing import Optional
 from model.overtime.overtime_comparator import OvertimeComparator
 from model.overtime.overtime_extractor import OvertimeExtractor
 from model.result import Result
@@ -5,13 +6,13 @@ from model.result import Result
 class OvertimeViewModel():
     def __init__ (
         self,
-        extractor: OvertimeExtractor = OvertimeExtractor(),
-        comparator: OvertimeComparator = OvertimeComparator()
+        extractor: Optional[OvertimeExtractor] = None,
+        comparator: Optional[OvertimeComparator] = None
     ):
-        self.overtime_data = []
-        self.errors = []
-        self.extractor = extractor
-        self.comparator = comparator
+        self.overtime_data: list = []
+        self.errors: list[str] = []
+        self.extractor = extractor or OvertimeExtractor()
+        self.comparator = comparator or OvertimeComparator()
         
     def extract_overtime(
         self,
@@ -25,7 +26,7 @@ class OvertimeViewModel():
             self.errors = []
             return Result(success=True, data=[])
         except Exception as e:
-            self.attendance_data = []
+            self.overtime_data = []
             self.errors = [str(e)]
             return Result(success=False, data=[], message=str(e))
         
@@ -42,6 +43,6 @@ class OvertimeViewModel():
             self.errors = []
             return Result(success=True, data=[])
         except Exception as e:
-            self.attendance_data = []
+            self.overtime_data = []
             self.errors = [str(e)]
             return Result(success=False, data=[], message=str(e))

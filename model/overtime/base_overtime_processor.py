@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from pathlib import Path
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import re
 
@@ -19,6 +19,7 @@ class BaseOvertimeProcessor():
         Apply or update settings before running processing.
         Should be called every time before extract/compare.
         """
+        print("BaseOvertimeProcessor: Applying settings.")
         if not isinstance(settings, dict):
             raise ValueError("Settings must be a dictionary.")
         self.settings = settings
@@ -48,15 +49,16 @@ class BaseOvertimeProcessor():
             return []
         return [x.strip() for x in value.split(",") if x.strip()]
     
-    def load_overtime_wb(self, file_path: str) -> load_workbook:
+    def load_overtime_wb(self, file_path: str) -> Workbook:
         """Load Overtime Excel file."""
+        print(f"BaseOvertimeProcessor: Loading overtime workbook from: {file_path}")
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
         self.overtime_wb = load_workbook(path, data_only=True)
         return self.overtime_wb
     
-    def load_hris_wb(self, hris_file: str) -> load_workbook:
+    def load_hris_wb(self, hris_file: str) -> Workbook:
         """Load HRIS Excel file."""
         path = Path(hris_file)
         if not path.exists():
@@ -70,6 +72,7 @@ class BaseOvertimeProcessor():
     
     def get_overtime_source_sheet(self) -> list[Worksheet]:
         """Return sheet objects based on settings.sheet_names."""
+        print(f"BaseOvertimeProcessor: Getting overtime source sheets: {self.sheet_names}")
         if not self.overtime_wb:
             raise ValueError("Overtime workbook is not loaded.")
         

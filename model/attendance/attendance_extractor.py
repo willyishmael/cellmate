@@ -1,14 +1,23 @@
+from typing import Optional
 from openpyxl import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.attendance.base_attendance_processor import BaseAttendanceProcessor
+from model.helper.save_utils import save_workbook_with_fallback
 
 class AttendanceExtractor(BaseAttendanceProcessor):
     """Class to handle attendance extraction from Excel files."""
-    def __init__(self):
+    def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
-        self.formatter = ExportFileFormatter()
+        self.formatter = formatter or ExportFileFormatter()
     
-    def extract(self, settings: dict, date_start_str: str, date_end_str: str, file: str):
+    def extract(
+        self, 
+        settings: dict, 
+        date_start_str: str, 
+        date_end_str: str, 
+        file: str
+    ) -> None:
         """Run the extraction process with given settings and file."""
         print("Starting extraction process...")
         self.apply_settings(settings)
@@ -38,11 +47,11 @@ class AttendanceExtractor(BaseAttendanceProcessor):
             )
             out_path = output_dir / file_name
             self.formatter.format_worksheet(twb.active)
-            twb.save(out_path)
+            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
             
     # Internal Helpers
-    def _init_target_sheet(self, company_code):
+    def _init_target_sheet(self, company_code) -> Workbook:
         wb = Workbook()
         ws = wb.active
         ws.title = company_code
@@ -51,7 +60,13 @@ class AttendanceExtractor(BaseAttendanceProcessor):
         ws.append(headers)
         return wb
     
-    def _process_source_sheet(self, ws, targets, date_start_str, date_end_str):
+    def _process_source_sheet(
+        self, 
+        ws: Worksheet, 
+        targets: dict[str, Workbook], 
+        date_start_str: str, 
+        date_end_str: str
+    ) -> None:
         print(f"Processing sheet: {ws.title}")
         
         start_row = self.data_start_row

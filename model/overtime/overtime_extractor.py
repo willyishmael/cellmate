@@ -1,15 +1,17 @@
+from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.overtime.base_overtime_processor import BaseOvertimeProcessor
+from model.helper.save_utils import save_workbook_with_fallback
 
 class OvertimeExtractor(BaseOvertimeProcessor):
     def __init__(
         self,
-        formatter: ExportFileFormatter = ExportFileFormatter()
+        formatter: Optional[ExportFileFormatter]= None
     ):
         super().__init__()
-        self.formatter = formatter
+        self.formatter = formatter or ExportFileFormatter()
         
     def extract(
         self,
@@ -18,6 +20,7 @@ class OvertimeExtractor(BaseOvertimeProcessor):
         date_end_str: str, 
         overtime_file: str  
     ):
+        print(f"OvertimeExtractor: Starting extraction for file: {overtime_file}")
         self.apply_settings(settings)
         self.load_overtime_wb(overtime_file)
         output_dir = self.get_output_dir(overtime_file)
@@ -45,8 +48,8 @@ class OvertimeExtractor(BaseOvertimeProcessor):
                 else f"{date_start_str} to {date_end_str} {code} Overtime.xlsx"
             )
             out_path = output_dir / file_name
-            self.formatter.format_worksheet(twb.active)
-            twb.save(out_path)
+            
+            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
         
         

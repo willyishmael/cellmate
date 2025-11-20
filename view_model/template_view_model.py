@@ -1,8 +1,6 @@
 from typing import Optional, Dict, List
-
 from PySide6.QtCore import QObject, Signal
 from model.template_model import Template, TemplateUtils
-
 
 class TemplateViewModel(QObject):
 	"""ViewModel for managing templates used across pages.
@@ -32,10 +30,11 @@ class TemplateViewModel(QObject):
 		self.templates_changed.emit()
 
 	def update_template(self,
-						identifier: Dict[str, str],
-						name: Optional[str] = None,
-						template_type: Optional[str] = None,
-						settings: Optional[dict] = None) -> None:
+		identifier: Dict[str, str],
+		name: Optional[str] = None,
+		template_type: Optional[str] = None,
+		settings: Optional[dict] = None
+  	) -> None:
 		"""Update a template identified by a dict: {'name': <name>, 'template_type': <type>}.
 
 		Raises ValueError if the identifier is invalid or the template is not found.
