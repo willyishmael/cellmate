@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         # Placeholder pages
         self.template_vm = TemplateViewModel()
         self.attendance_page = AttendancePage(self.template_vm)
-        self.overtime_page = OvertimePage(self.template_vm)
+        self.overtime_page = OvertimePage(template_vm=self.template_vm)
         self.overtime_optdrv_page = OvertimeOptDrvPage(self.template_vm)
         self.templates_page = TemplatePage(self.template_vm)
         self.app_info_page = AppInfoPage()
