@@ -1,5 +1,6 @@
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from model.helper.date_utils import format_date
 from model.helper.save_utils import save_workbook_with_fallback
 from model.overtime_optdrv.base_overtime_optdrv_processor import BaseOvertimeOptdrvProcessor
 
@@ -86,7 +87,7 @@ class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
         for col in range(company_code_col + 1, ws.max_column + 1):
             cell_value = ws.cell(row=date_header_row, column=col).value
             try:
-                date = self._format_date(cell_value)
+                date = format_date(cell_value)
                 header_dates.append((col, date))
             except Exception:
                 continue

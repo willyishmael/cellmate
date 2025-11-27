@@ -4,6 +4,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.overtime.base_overtime_processor import BaseOvertimeProcessor
 from model.helper.save_utils import save_workbook_with_fallback
+from model.helper.date_utils import format_date, try_parse_date
 
 class OvertimeExtractor(BaseOvertimeProcessor):
     def __init__(
@@ -118,14 +119,14 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             _notes = ws.cell(row=row, column=notes_col).value
             
             # Parse date as a date object and compare ranges using dates
-            formatted_date = self._format_date(date)
-            parsed_date = self._try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
+            formatted_date = format_date(date)
+            parsed_date = try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
             if parsed_date is None:
                 continue
             
             try:
-                start_dt = self._try_parse_date(date_start_str) or parsed_date
-                end_dt = self._try_parse_date(date_end_str) or parsed_date
+                start_dt = try_parse_date(date_start_str) or parsed_date
+                end_dt = try_parse_date(date_end_str) or parsed_date
             except Exception:
                 start_dt = parsed_date
                 end_dt = parsed_date

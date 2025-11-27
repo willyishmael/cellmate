@@ -1,6 +1,7 @@
 from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from model.helper.date_utils import format_date
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.attendance.base_attendance_processor import BaseAttendanceProcessor
 from model.helper.save_utils import save_workbook_with_fallback
@@ -89,7 +90,7 @@ class AttendanceExtractor(BaseAttendanceProcessor):
         for col in range(company_code_col + 1, ws.max_column + 1):
             cell_value = ws.cell(row=header_row, column=col).value
             try:
-                date = self._format_date(cell_value)
+                date = format_date(cell_value)
                 header_dates.append((col, date))
             except Exception:
                 continue

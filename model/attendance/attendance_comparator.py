@@ -1,6 +1,7 @@
 from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from model.helper.date_utils import format_date
 from model.helper.export_file_formatter import ExportFileFormatter
 from model.attendance.base_attendance_processor import BaseAttendanceProcessor
 from model.helper.save_utils import save_workbook_with_fallback
@@ -95,7 +96,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
         for col in range(self.company_code_col + 1, ws.max_column + 1):
             cell_value = ws.cell(row=self.date_header_row, column=col).value
             try:
-                date = self._format_date(cell_value)
+                date = format_date(cell_value)
                 header_dates.append((col, date))
             except Exception:
                 continue
@@ -135,7 +136,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 if not code or str(code).strip() == "" or not date:
                     continue
 
-                formatted_date = self._format_date(date)
+                formatted_date = format_date(date)
                 employee_id_str = str(employee_id).strip()
 
                 key = f"{formatted_date}_{employee_id_str}"
@@ -177,7 +178,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
         for col in range(5, ws.max_column + 1):
             cell_value = ws.cell(row=1, column=col).value
             try:
-                date = self._format_date(cell_value)
+                date = format_date(cell_value)
                 header_dates.append((col, date))
             except Exception:
                 continue
@@ -207,7 +208,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 if not status or str(status).strip() == "" or not date:
                     continue
                 
-                formatted_date = self._format_date(date)
+                formatted_date = format_date(date)
                 employee_id_str = str(employee_id).strip()
                 key = f"{formatted_date}_{employee_id_str}"
                 matched_record = self.attendance_index.get(key)
