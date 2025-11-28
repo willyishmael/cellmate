@@ -1,13 +1,16 @@
+from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.date_utils import format_date
+from model.helper.export_file_formatter import ExportFileFormatter
 from model.helper.save_utils import save_workbook_with_fallback
 from model.overtime_optdrv.base_overtime_optdrv_processor import BaseOvertimeOptdrvProcessor
 
 
 class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
-    def __init__(self):
+    def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
+        self.formatter = formatter or ExportFileFormatter()
         
     def extract(
         self,
@@ -45,10 +48,10 @@ class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
             )
             out_path = output_dir / file_name
             
-            save_workbook_with_fallback(twb, out_path)
+            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
             
-    def _init_target_sheet(self, company_code):
+    def _init_target_sheet(self, company_code: str) -> Workbook:
         wb = Workbook()
         ws = wb.active
         ws.title = company_code
@@ -63,7 +66,7 @@ class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
         targets: dict[str, Workbook], 
         date_start_str: str, 
         date_end_str: str
-    ):
+    ) -> None:
         """Process a single source worksheet and populate target workbooks."""
         print(f"Processing source sheet: {ws.title}")
         

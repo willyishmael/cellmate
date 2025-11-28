@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 from openpyxl import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
+from model.helper.export_file_formatter import ExportFileFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +18,14 @@ def copy_values_only(src_wb: Workbook) -> Workbook:
         pass
 
     for sheet in src_wb.worksheets:
-        tgt = new_wb.create_sheet(title=sheet.title)
+        tgt: Worksheet = new_wb.create_sheet(title=sheet.title)
         for row in sheet.iter_rows(values_only=True):
             # row is a tuple of values (not cells)
             tgt.append(list(row))
     return new_wb
 
 
-def save_workbook_with_fallback(src_wb: Workbook, out_path: Path, formatter=None):
+def save_workbook_with_fallback(src_wb: Workbook, out_path: Path, formatter: ExportFileFormatter =None):
     """Try to save workbook; on failure attempt to clear externalReferences, then fallback to value-only copy.
 
     formatter: optional object with method `format_worksheet(ws)`; if provided, it will be called

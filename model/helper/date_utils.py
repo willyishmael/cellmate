@@ -4,12 +4,12 @@ from openpyxl.utils.datetime import from_excel
 import re
 
 
-def format_date(self, value) -> str:
+def format_date(value) -> str:
         """Ensure date formatted as yyyy-mm-dd string.
 
         Handles:
         - datetime objects
-        - ISO-like 'YYYY-MM-DD' or 'YYYY/MM/DD'
+        - ISO-like 'YYYY-MM-DD' or 'YYYY/MM/DD' with optional time component
         - 'DD/MM/YYYY' and 'DD-MM-YYYY'
         - 'DD/MM' (no year) -> assumes current year
 
@@ -20,8 +20,8 @@ def format_date(self, value) -> str:
 
         s = str(value).strip()
 
-        # Common full-date formats
-        for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y"):
+        # Common full-date formats (including with time component)
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y"):
             try:
                 return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
             except Exception:
@@ -47,7 +47,7 @@ def format_date(self, value) -> str:
         # Fallback: return original string
         return s
     
-def try_parse_date(self, value, default_year: int | None = None) -> date | None:
+def try_parse_date(value) -> date | None:
         """Try to parse a cell value into a datetime.date.
 
         Returns a datetime.date on success, or None when parsing fails.
