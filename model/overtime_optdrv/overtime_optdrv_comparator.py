@@ -1,12 +1,13 @@
 from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from model.helper.export_file_formatter import ExportFileFormatter
-from model.overtime.base_overtime_processor import BaseOvertimeProcessor
-from model.helper.save_utils import save_workbook_with_fallback
 from model.helper.date_utils import format_date, try_parse_date
+from model.helper.export_file_formatter import ExportFileFormatter
+from model.helper.save_utils import save_workbook_with_fallback
+from model.overtime_optdrv.base_overtime_optdrv_processor import BaseOvertimeOptdrvProcessor
 
-class OvertimeComparator(BaseOvertimeProcessor):
+
+class OvertimeOptdrvComparator(BaseOvertimeOptdrvProcessor):
     def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
         self.formatter = formatter or ExportFileFormatter()
@@ -74,27 +75,13 @@ class OvertimeComparator(BaseOvertimeProcessor):
         date_start_str: str, 
         date_end_str: str
     ) -> None:
-        
-        # Determine company code by ws title
-        ws_title = ws.title
-        sheet_company_code = self._company_code_from_sheet_title(ws_title)
-        print(f"Processing sheet: {ws.title} for company code: {sheet_company_code}")
+        print(f"Processing source sheet: {ws.title}")
             
-        if not sheet_company_code:
-            return
-        if sheet_company_code not in targets:
-            return
-
         start_row = self.data_start_row
+        date_header_row = self.date_header_row
         id_col = self.employee_id_col
-        name_col = id_col + 1
-        date_col = name_col + 2
-        shift_col = date_col + 1
-        ovt_start_col = shift_col + 1
-        ovt_end_col = ovt_start_col + 1
-        ovt_hour_col = ovt_end_col + 1
-        ovt_col = ovt_hour_col + 1
-        notes_col = ovt_col + 2
+        name_col = self.employee_name_col
+        company_code_col = self.company_code_col
         row_counter_col = self.row_counter_col
             
         # Find last non-empty cell in row_counter_col, from bottom up
@@ -104,61 +91,77 @@ class OvertimeComparator(BaseOvertimeProcessor):
             if value is not None and str(value).strip() != "":
                 last_data_row = row
                 break
+        
+        # Extract dates from header row
+        header_dates = []
+        for col in range(company_code_col + 1, ws.max_column + 1):
+            cell_value = ws.cell(row=date_header_row, column=col).value
+            try:
+                date = format_date(cell_value)
+                header_dates.append((col, date))
+            except Exception:
+                continue
             
-        # Initialize persistent variables
-        employee_id = ""
-        employee_name = ""
-        notes = ""
+        # Determine start and end columns based on date range
+        start_col = None
+        end_col = None
+        
+        for col, date in header_dates:
+            if date == date_start_str and start_col is None:
+                start_col = col
+            if date == date_end_str:
+                end_col = col
+
+        if start_col is None:
+            start_col = company_code_col + 1
+        if end_col is None:
+            end_col = ws.max_column
+            
+        print(f"Data rows: {start_row} to {last_data_row}, Columns: {start_col} to {end_col}")
+        
             
         for row in range(start_row, last_data_row + 1):
-                
-            date = ws.cell(row=row, column=date_col).value
-            shift = ws.cell(row=row, column=shift_col).value
-            overtime = ws.cell(row=row, column=ovt_col).value
-            overtime_hours = ws.cell(row=row, column=ovt_hour_col).value
-                
-            _id = ws.cell(row=row, column=id_col).value
-            _name = ws.cell(row=row, column=name_col).value
-            _notes = ws.cell(row=row, column=notes_col).value
-                
-            # Parse date as a date object and compare ranges using dates
-            formatted_date = format_date(date)
-            parsed_date = try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
-            if parsed_date is None:
-                continue
-                
-            try:
-                start_dt = try_parse_date(date_start_str) or parsed_date
-                end_dt = try_parse_date(date_end_str) or parsed_date
-            except Exception:
-                start_dt = parsed_date
-                end_dt = parsed_date
-
-            if not (start_dt <= parsed_date <= end_dt):
-                continue
-                
-            if not shift or not overtime or not overtime_hours:
-                continue
-                
-            # Update persistent variables if current row has new values
-            employee_id = str(_id).strip() if _id else employee_id
-            employee_name = str(_name).strip() if _name else employee_name
-            notes = str(_notes).strip() if _notes else notes
-                
-            status, timein, timeout = self.map_status(shift)
+            company_code = ws.cell(row=row, column=company_code_col).value
             
-            key = f"{formatted_date}_{employee_id}"
-            record = {
-                "date": formatted_date,
-                "employee_id": employee_id,
-                "employee_name": employee_name,
-                "status": status,
-                "overtime": overtime,
-                "time_in": timein,
-                "time_out": timeout,
-                "notes": notes,
-                "company_code": sheet_company_code
-            }
+            if not company_code or company_code not in targets:
+                continue
+            
+            target_wb = targets[company_code]
+            target_ws = target_wb.active
+            
+            employee_id = ws.cell(row=row, column=id_col).value
+            employee_name = ws.cell(row=row, column=name_col).value
+            
+            for col in range(start_col, end_col + 1):
+                date = None
+                for hd_col, hd_date in header_dates:
+                    if hd_col == col:
+                        date = hd_date
+                        break
+                if not date:
+                    continue
+                
+                overtime = ws.cell(row=row, column=col).value
+                if overtime is None or str(overtime).strip() == "" or overtime == 0:
+                    continue
+                
+                time_in = "07:00"
+                time_out = "19:00"
+                status = "Hadir (H)"
+                
+                formatted_date = format_date(date)
+                key = f"{formatted_date}_{employee_id}"
+                record = {
+                    "date": formatted_date,
+                    "employee_id": employee_id,
+                    "employee_name": employee_name,
+                    "status": status,
+                    "overtime": overtime,
+                    "time_in": time_in,
+                    "time_out": time_out,
+                    "notes": "",
+                    "company_code": company_code
+                }
             
             if key in self.overtime_index:
                 # Existing record for same person/date -> increment overtime value
@@ -167,8 +170,6 @@ class OvertimeComparator(BaseOvertimeProcessor):
                 existing_val_num = float(existing_val)
                 add_val = float(overtime) 
                 existing["Overtime"] = existing_val_num + add_val
-                
-
             else:
                 try:
                     existing_overtime = float(overtime)
@@ -255,12 +256,4 @@ class OvertimeComparator(BaseOvertimeProcessor):
                         matched_overtime_record["time_out"],
                         matched_overtime_record["notes"]
                     ])
-                    
-                    
-                    
-                
-                
-                
-
-              
     
