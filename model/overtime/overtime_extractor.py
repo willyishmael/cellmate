@@ -109,7 +109,7 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             
             # Parse date as a date object and compare ranges using dates
             formatted_date = format_date(date)
-            parsed_date = try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
+            parsed_date = try_parse_date(formatted_date)
             if parsed_date is None:
                 continue
             
