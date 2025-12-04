@@ -122,7 +122,7 @@ class AttendanceExtractor(BaseAttendanceProcessor):
                 if not code or date_raw is None :
                     continue
 
-                formatted_date = self._format_date(date_raw)
+                formatted_date = format_date(date_raw)
                 status, timein, timeout = self._map_status(code)
                 ws_target = targets[company_code].active
                 ws_target.append([
