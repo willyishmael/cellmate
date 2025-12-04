@@ -1,7 +1,7 @@
 from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from model.helper.export_file_formatter import ExportFileFormatter
+from model.helper.export_file_formatter import ExportFileFormatter, WorkbookType
 from model.overtime.base_overtime_processor import BaseOvertimeProcessor
 from model.helper.save_utils import save_workbook_with_fallback
 from model.helper.date_utils import format_date, try_parse_date
@@ -32,7 +32,7 @@ class OvertimeComparator(BaseOvertimeProcessor):
         print(f"Date Start: {date_start_str}, Date End: {date_end_str}")
         
         self.targets = {
-            code: self._init_target_sheet(code)
+            code: self.formatter.prepare_workbook(code, WorkbookType.COMPARE)
             for code, checked in self.company_codes.items()
             if checked
         }
@@ -56,16 +56,6 @@ class OvertimeComparator(BaseOvertimeProcessor):
             self.formatter.format_worksheet(ws=twb.active)
             save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
-            
-    def _init_target_sheet(self, company_code: str) -> Workbook:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = company_code
-        headers = ["Manual", "HRIS", "Difference", "Tanggal", "Employee ID", 
-                   "Nama Karyawan", "Status", "Overtime", "Time In", "Time Out", 
-                   "Keterangan"]
-        ws.append(headers)
-        return wb
         
     def _process_overtime_sheet(
         self, 

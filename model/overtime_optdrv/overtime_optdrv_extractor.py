@@ -2,7 +2,7 @@ from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from model.helper.date_utils import format_date
-from model.helper.export_file_formatter import ExportFileFormatter
+from model.helper.export_file_formatter import ExportFileFormatter, WorkbookType
 from model.helper.save_utils import save_workbook_with_fallback
 from model.overtime_optdrv.base_overtime_optdrv_processor import BaseOvertimeOptdrvProcessor
 
@@ -28,7 +28,7 @@ class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
         print(f"Date Start: {date_start_str}, Date End: {date_end_str}")
         
         targets = {
-            code: self._init_target_sheet(code)
+            code: self.formatter.prepare_workbook(code, WorkbookType.EXTRACT)
             for code, checked in self.company_codes.items()
             if checked
         }
@@ -50,15 +50,6 @@ class OvertimeOptdrvExtractor(BaseOvertimeOptdrvProcessor):
             
             save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
             print(f"Saved {out_path.name}")
-            
-    def _init_target_sheet(self, company_code: str) -> Workbook:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = company_code
-        headers = ["Tanggal", "Employee ID", "Nama Karyawan", "Status", 
-                   "Overtime", "Time In", "Time Out", "Keterangan"]
-        ws.append(headers)
-        return wb
     
     def _process_source_sheet(
         self, 
