@@ -103,9 +103,9 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             overtime = ws.cell(row=row, column=ovt_col).value
             overtime_hours = ws.cell(row=row, column=ovt_hour_col).value
             
-            _id = ws.cell(row=row, column=id_col).value
-            _name = ws.cell(row=row, column=name_col).value
-            _notes = ws.cell(row=row, column=notes_col).value
+            _id = str(ws.cell(row=row, column=id_col).value).strip()
+            _name = str(ws.cell(row=row, column=name_col).value).strip()
+            _notes = str(ws.cell(row=row, column=notes_col).value).strip()
             
             # Parse date as a date object and compare ranges using dates
             formatted_date = format_date(date)
@@ -129,10 +129,9 @@ class OvertimeExtractor(BaseOvertimeProcessor):
                 continue
             
             # Update persistent variables if current row has new values
-            employee_id = str(_id).strip() if _id else employee_id
-            employee_name = str(_name).strip() if _name else employee_name
-            notes = str(_notes).strip() if _notes else notes
-            
+            employee_id = _id if _id != "" else employee_id
+            employee_name = _name if _name != "" else employee_name
+            notes = _notes if _notes != "" else notes
             
             status, timein, timeout = self.map_status(shift)
 

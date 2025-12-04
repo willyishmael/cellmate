@@ -16,9 +16,8 @@ class ExportFileFormatter:
         ws.title = company_code
         header = []
         
-        extract_headers = ["Manual", "HRIS", "Difference", "Tanggal", "Employee ID", 
-                           "Nama Karyawan", "Status", "Overtime", "Time In", "Time Out", 
-                           "Keterangan"]
+        extract_headers = ["Tanggal", "Employee ID", "Nama Karyawan", "Status",
+                           "Overtime", "Time In", "Time Out", "Keterangan"]
         compare_headers = ["Manual", "HRIS", "Difference"] + extract_headers
         
         if type == WorkbookType.EXTRACT:
