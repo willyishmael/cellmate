@@ -119,7 +119,14 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             except Exception:
                 start_dt = parsed_date
                 end_dt = parsed_date
+            
+            # Update persistent variables if current row has new values
+            employee_id = _id if _id != "" else employee_id
+            employee_name = _name if _name != "" else employee_name
+            notes = _notes if _notes != "" else notes
+            status, timein, timeout = self.map_status(shift)
 
+            # Skip rows outside date range or with invalid data
             if not (start_dt <= parsed_date <= end_dt):
                 print(f"row: {row} skipped, date are not valid")
                 continue
@@ -127,13 +134,6 @@ class OvertimeExtractor(BaseOvertimeProcessor):
             if not shift or not overtime or not overtime_hours:
                 print(f"row: {row} skipped, shift or overtime value is not valid")
                 continue
-            
-            # Update persistent variables if current row has new values
-            employee_id = _id if _id != "" else employee_id
-            employee_name = _name if _name != "" else employee_name
-            notes = _notes if _notes != "" else notes
-            
-            status, timein, timeout = self.map_status(shift)
 
             target_ws = targets[sheet_company_code].active
             target_ws.append([
