@@ -1,12 +1,13 @@
 from typing import Optional
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from model.base_processor import BaseProcessor
+from model.data_class.settings import AttendanceSettings
 from model.helper.date_utils import format_date
 from model.helper.export_file_formatter import ExportFileFormatter, WorkbookType
-from model.attendance.base_attendance_processor import BaseAttendanceProcessor
 from model.helper.save_utils import save_workbook_with_fallback
 
-class AttendanceComparator(BaseAttendanceProcessor):
+class AttendanceComparator(BaseProcessor):
     """
     Compare Attendance data (from extracted report) with HRIS export.
     Outputs differences such as missing uploads or mismatched attendance codes.
@@ -28,32 +29,32 @@ class AttendanceComparator(BaseAttendanceProcessor):
     ) -> None:
         """Run the comparison process with given settings and files."""
         print("Starting comparison process...")
-        self.apply_settings(settings)
-        self.attendance_wb = self.load_attendance_wb(attendance_file)
-        self.hris_wb = self.load_hris_wb(hris_file)
+        attendance_settings = self.apply_attendance_settings(settings)
+        source_wb = self.load_source_wb(attendance_file)
+        hris_wb = self.load_hris_wb(hris_file)
         output_dir = self.get_output_dir(attendance_file)
-        attendance_ws = self.get_attendance_source_sheets()
-        hris_ws = self.get_hris_source_sheets()
+        source_ws = self.get_source_sheets(source_wb, attendance_settings.sheet_names)
+        hris_ws = self.get_hris_source_sheets(hris_wb)
         
         print("Preparing target workbooks...")
         
         # Prepare target workbooks for each selected company code
-        self.targets = {
+        targets = {
             code: self.formatter.prepare_workbook(code, WorkbookType.COMPARE)
-            for code, checked in self.company_codes.items()
+            for code, checked in attendance_settings.company_codes.items()
             if checked
         }
 
-        print(f"Target workbooks prepared. Company codes: {list(self.targets.keys())}")
+        print(f"Target workbooks prepared. Company codes: {list(targets.keys())}")
         # Process attendance and HRIS sheets
-        for ws in attendance_ws:
-            self._process_attendance_sheet(ws, date_start_str, date_end_str)
+        for ws in source_ws:
+            self._process_attendance_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
         for ws in hris_ws:
-            self._process_hris_sheet(ws, date_start_str, date_end_str)
+            self._process_hris_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
         
         # Save comparison results
         print("Saving comparison results...")
-        for code, twb in self.targets.items():
+        for code, twb in targets.items():
             print(f"Saving comparison output for company code: {code}")
             file_name = (
                 f"{date_start_str} {code} HRIS Comparison.xlsx"
@@ -68,23 +69,25 @@ class AttendanceComparator(BaseAttendanceProcessor):
     def _process_attendance_sheet(
         self, 
         ws: Worksheet, 
+        settings: AttendanceSettings,
+        targets: dict[str, Workbook],
         date_start_str: str, 
         date_end_str: str
     ) -> None:
         print(f"Processing attendance sheet: {ws.title}")
         
         # Find last non-empty cell in row_counter_col, from bottom up
-        last_data_row = self.data_start_row
-        for row in range(ws.max_row, self.data_start_row - 1, -1):
-            value = ws.cell(row=row, column=self.row_counter_col).value
+        last_data_row = settings.data_start_row
+        for row in range(ws.max_row, settings.data_start_row - 1, -1):
+            value = ws.cell(row=row, column=settings.row_counter_col).value
             if value is not None and str(value).strip() != "":
                 last_data_row = row
                 break
         
         # Extract dates from header row
         header_dates = []
-        for col in range(self.company_code_col + 1, ws.max_column + 1):
-            cell_value = ws.cell(row=self.date_header_row, column=col).value
+        for col in range(settings.company_code_col + 1, ws.max_column + 1):
+            cell_value = ws.cell(row=settings.date_header_row, column=col).value
             try:
                 date = format_date(cell_value)
                 header_dates.append((col, date))
@@ -102,27 +105,27 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 end_col = col
 
         if start_col is None:
-            start_col = self.company_code_col + 1
+            start_col = settings.company_code_col + 1
         if end_col is None:
             end_col = ws.max_column
             
-        print(f"Data rows: {self.data_start_row} to {last_data_row}, Columns: {start_col} to {end_col}")
+        print(f"Data rows: {settings.data_start_row} to {last_data_row}, Columns: {start_col} to {end_col}")
         
         # Process each row of data
-        for row in range(self.data_start_row, last_data_row + 1):
-            employee_id = ws.cell(row=row, column=self.employee_id_col).value
-            employee_name = ws.cell(row=row, column=self.employee_name_col).value
-            company_code = ws.cell(row=row, column=self.company_code_col).value
+        for row in range(settings.data_start_row, last_data_row + 1):
+            employee_id = ws.cell(row=row, column=settings.employee_id_col).value
+            employee_name = ws.cell(row=row, column=settings.employee_name_col).value
+            company_code = ws.cell(row=row, column=settings.company_code_col).value
 
-            if not employee_id or str(employee_id).strip() in self.ignore_list:
+            if not employee_id or str(employee_id).strip() in settings.ignore_list:
                 continue
 
-            if company_code not in self.targets:
+            if company_code not in targets:
                 continue
 
             for col in range(start_col, end_col + 1):
                 code = ws.cell(row=row, column=col).value
-                date = ws.cell(row=self.date_header_row, column=col).value
+                date = ws.cell(row=settings.date_header_row, column=col).value
                 if not code or str(code).strip() == "" or not date:
                     continue
 
@@ -153,7 +156,9 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 
     def _process_hris_sheet(
         self, 
-        ws: Worksheet, 
+        ws: Worksheet,
+        settings: AttendanceSettings,
+        targets: dict[str, Workbook],
         date_start_str: str, 
         date_end_str: str
     ) -> None:
@@ -184,7 +189,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 end_col = col
 
         if start_col is None:
-            start_col = self.company_code_col + 1
+            start_col = settings.company_code_col + 1
         if end_col is None:
             end_col = ws.max_column
         
@@ -204,7 +209,7 @@ class AttendanceComparator(BaseAttendanceProcessor):
                 matched_record = self.attendance_index.get(key)
                 
                 if matched_record:
-                    ws_target = self.targets[matched_record["company_code"]].active
+                    ws_target = targets[matched_record["company_code"]].active
                     ws_target.append([
                         matched_record["status"], # Manual
                         status, # HRIS
