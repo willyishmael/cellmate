@@ -21,6 +21,14 @@ class OvertimeSettings:
     row_counter_col: int
     sheet_names: list[str]
     company_codes: dict
+    employee_name_col: int
+    date_col: int
+    shift_col: int
+    ovt_start_col: int
+    ovt_end_col: int
+    ovt_hour_col: int
+    ovt_col: int
+    notes_col: int
     
 @dataclass
 class OvertimeOptDrvSettings:

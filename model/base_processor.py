@@ -1,9 +1,7 @@
-from abc import abstractmethod
 from pathlib import Path
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
-
-from model.data_class.settings import AttendanceSettings
+from model.data_class.settings import AttendanceSettings, OvertimeOptDrvSettings, OvertimeSettings
 
 class BaseProcessor:
     
@@ -13,20 +11,14 @@ class BaseProcessor:
         Should be called every time before extract/compare.
         Returns an AttendanceSettings object with parsed configuration.
         """
-        
-        def to_int(value, default):
-            try:
-                return int(value)
-            except Exception:
-                return default
 
         self.attendance_settings = AttendanceSettings(
-            employee_id_col=to_int(settings.get("employee_id_column"), 2),
-            employee_name_col=to_int(settings.get("employee_name_column"), 3),
-            company_code_col=to_int(settings.get("company_code_column"), 5),
-            data_start_row=to_int(settings.get("data_start_row"), 5),
-            date_header_row=to_int(settings.get("date_header_row"), 4),
-            row_counter_col=to_int(settings.get("row_counter_column"), 1),
+            employee_id_col=int(settings.get("employee_id_column") or 2),
+            employee_name_col=int(settings.get("employee_name_column") or 3),
+            company_code_col=int(settings.get("company_code_column") or 5),
+            data_start_row=int(settings.get("data_start_row") or 5),
+            date_header_row=int(settings.get("date_header_row") or 4),
+            row_counter_col=int(settings.get("row_counter_column") or 1),
             sheet_names=self._parse_comma_list(settings.get("sheet_names", "")),
             ignore_list=self._parse_comma_list(settings.get("ignore_list", "")),
             company_codes=settings.get("company_codes", {})
@@ -34,6 +26,61 @@ class BaseProcessor:
 
         return self.attendance_settings
     
+    def apply_overtime_settings(self, settings: dict[str, any]) -> OvertimeSettings:
+        """
+        Apply or update settings before running processing.
+        Should be called every time before extract/compare.
+        Returns an OvertimeSettings object with parsed configuration.
+        """
+
+        # parse primary columns and derive related column indices
+        emp_col = int(settings.get("employee_id_column") or 2)
+        data_start = int(settings.get("data_start_row") or 5)
+        row_counter = int(settings.get("row_counter_column") or 1)
+
+        name_col = emp_col + 1
+        date_col = name_col + 2
+        shift_col = date_col + 1
+        ovt_start_col = shift_col + 1
+        ovt_end_col = ovt_start_col + 1
+        ovt_hour_col = ovt_end_col + 1
+        ovt_col = ovt_hour_col + 1
+        notes_col = ovt_col + 2
+
+        self.overtime_settings = OvertimeSettings(
+            employee_id_col=emp_col,
+            data_start_row=data_start,
+            row_counter_col=row_counter,
+            sheet_names=self._parse_comma_list(settings.get("sheet_names", "")),
+            company_codes=settings.get("company_codes", {}),
+            employee_name_col=name_col,
+            date_col=date_col,
+            shift_col=shift_col,
+            ovt_start_col=ovt_start_col,
+            ovt_end_col=ovt_end_col,
+            ovt_hour_col=ovt_hour_col,
+            ovt_col=ovt_col,
+            notes_col=notes_col
+        )
+
+        return self.overtime_settings
+    
+    def apply_overtime_optdrv_settings(self, settings: dict[str, any]) -> OvertimeOptDrvSettings:
+        """
+        Apply or update settings before running processing.
+        Should be called every time before extract/compare.
+        Returns an OvertimeOptDrvSettings object with parsed configuration.
+        """
+
+        self.overtime_optdrv_settings = OvertimeOptDrvSettings(
+            employee_id_col=int(settings.get("employee_id_column") or 2),
+            data_start_row=int(settings.get("data_start_row") or 5),
+            row_counter_col=int(settings.get("row_counter_column") or 1),
+            sheet_names=self._parse_comma_list(settings.get("sheet_names", "")),
+            company_codes=settings.get("company_codes", {})
+        )
+
+        return self.overtime_optdrv_settings
     
     def load_source_wb(self, file_path: str) -> Workbook:
         """Load Source Excel file. This will handle both attendance and overtime files."""
@@ -69,7 +116,7 @@ class BaseProcessor:
             raise ValueError("Workbook not loaded yet.")
         return [hris_wb[sheet] for sheet in hris_wb.sheetnames]
     
-    def _map_status(self, code: str) -> tuple[str, str, str]:
+    def map_status(self, code: str) -> tuple[str, str, str]:
         """Map attendance codes to descriptions and time ranges."""
         code = str(code).strip().upper()
         mapping = {
@@ -84,8 +131,28 @@ class BaseProcessor:
         }
         return mapping.get(code, (code, "", ""))
     
+    def map_status(self, shift: str) -> tuple[str, str, str]:
+        """Map shift to descriptions and time ranges."""
+        code = str(shift).strip().upper()
+        mapping = {
+            "PAGI": ("Hadir (H)", "07:00", "18:00"),
+            "SIANG": ("Hadir (H)", "07:00", "18:00"),
+            "MALAM": ("Hadir shift malam (HM)", "19:00", "06:00"),
+        }
+        return mapping.get(code, (code, "", ""))
+    
     def _parse_comma_list(self, value: str) -> list[str]:
         """Convert comma-separated text into a list of trimmed strings."""
         if not value:
             return []
         return [x.strip() for x in value.split(",") if x.strip()]
+    
+    def _company_code_from_sheet_title(self, title: str) -> str | None:
+        """Determine company code from a worksheet title."""
+        if not title:
+            return None
+        t = str(title).upper()
+        for code in ("PTM", "TMP", "PM"):
+            if code in t:
+                return code
+        return None
