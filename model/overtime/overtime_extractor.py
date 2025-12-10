@@ -43,6 +43,7 @@ class OvertimeExtractor(BaseProcessor):
             output_dir=output_dir,
             date_start_str=date_start_str,
             date_end_str=date_end_str,
+            type_str="Overtime",
             formatter=self.formatter,
         )
         

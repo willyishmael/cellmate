@@ -5,7 +5,7 @@ from model.base_processor import BaseProcessor
 from model.data_class.settings import AttendanceSettings
 from model.helper.date_utils import format_date
 from model.helper.export_file_formatter import ExportFileFormatter, WorkbookType
-from model.helper.save_utils import save_workbook_with_fallback
+from model.helper.save_utils import save_target_workbooks
 
 class AttendanceComparator(BaseProcessor):
     """
@@ -51,20 +51,15 @@ class AttendanceComparator(BaseProcessor):
             self._process_attendance_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
         for ws in hris_ws:
             self._process_hris_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
-        
-        # Save comparison results
-        print("Saving comparison results...")
-        for code, twb in targets.items():
-            print(f"Saving comparison output for company code: {code}")
-            file_name = (
-                f"{date_start_str} {code} HRIS Comparison.xlsx"
-                if date_end_str == date_start_str
-                else f"{date_start_str} to {date_end_str} {code} Comparison.xlsx"
-            )
-            out_path = output_dir / file_name
-            self.formatter.format_worksheet(twb.active)
-            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
-            print(f"Saved {out_path.name}")
+            
+        save_target_workbooks(
+            targets=targets,
+            output_dir=output_dir,
+            date_start_str=date_start_str,
+            date_end_str=date_end_str,
+            type_str="Attendance Comparison",
+            formatter=self.formatter,
+        )
     
     def _process_attendance_sheet(
         self, 
@@ -209,19 +204,25 @@ class AttendanceComparator(BaseProcessor):
                 matched_record = self.attendance_index.get(key)
                 
                 if matched_record:
-                    ws_target = targets[matched_record["company_code"]].active
-                    ws_target.append([
-                        matched_record["status"], # Manual
-                        status, # HRIS
-                        matched_record["status"] == status, # Difference
-                        matched_record["date"],
-                        matched_record["employee_id"],
-                        matched_record["employee_name"],
-                        matched_record["status"],
-                        matched_record["overtime"],
-                        matched_record["timein"],
-                        matched_record["timeout"],
-                        matched_record["notes"]
-                    ])
+                    self._build_attendance_comparison_row(matched_record, status, targets)
+
+    def _build_attendance_comparison_row(self, matched_record: dict, hris_status, targets: dict) -> None:
+        """Build and append an attendance comparison row to the appropriate worksheet."""
+        company_code = matched_record.get("company_code")
+        ws_target = targets.get(company_code).active
+        difference = matched_record.get("status") == hris_status
+        ws_target.append([
+            matched_record.get("status"),  # Manual
+            hris_status,  # HRIS
+            difference,  # Difference
+            matched_record.get("date"),
+            matched_record.get("employee_id"),
+            matched_record.get("employee_name"),
+            matched_record.get("status"),
+            matched_record.get("overtime"),
+            matched_record.get("timein"),
+            matched_record.get("timeout"),
+            matched_record.get("notes"),
+        ])
 
         

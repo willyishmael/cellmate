@@ -5,7 +5,7 @@ from model.base_processor import BaseProcessor
 from model.data_class.settings import AttendanceSettings
 from model.helper.date_utils import format_date
 from model.helper.export_file_formatter import ExportFileFormatter, WorkbookType
-from model.helper.save_utils import save_workbook_with_fallback
+from model.helper.save_utils import save_target_workbooks
 
 class AttendanceExtractor(BaseProcessor):
     """Class to handle attendance extraction from Excel files."""
@@ -36,21 +36,15 @@ class AttendanceExtractor(BaseProcessor):
         
         for ws in source_ws:
             self._process_source_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
-        
-        # Save output files
-        print("Saving output files...")
-        print(f"Targets Items: {list(targets.keys())}")
-        for code, twb in targets.items():
-            print(f"Saving output for company code: {code}")
-            file_name = (
-                f"{date_start_str} {code} Attendance.xlsx"
-                if date_end_str == date_start_str
-                else f"{date_start_str} to {date_end_str} {code} Attendance.xlsx"
-            )
-            out_path = output_dir / file_name
-            self.formatter.format_worksheet(twb.active)
-            save_workbook_with_fallback(twb, out_path, formatter=self.formatter)
-            print(f"Saved {out_path.name}")
+            
+        save_target_workbooks(
+            targets=targets,
+            output_dir=output_dir,
+            date_start_str=date_start_str,
+            date_end_str=date_end_str,
+            type_str="Attendance",
+            formatter=self.formatter,
+        )
     
     def _process_source_sheet(
         self, 

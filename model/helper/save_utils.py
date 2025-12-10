@@ -84,10 +84,11 @@ def save_target_workbooks(
     output_dir: Path,
     date_start_str: str,
     date_end_str: str,
+    type_str: str,
     formatter: ExportFileFormatter | None = None,
-    filename_suffix: str = "Overtime Comparison.xlsx",
-    name_template_single: str = "{date} {code} {suffix}",
-    name_template_range: str = "{start} to {end} {code} {suffix}",
+    filename_suffix: str = ".xlsx",
+    name_template_single: str = "{date} {code} {type} {suffix}",
+    name_template_range: str = "{start} to {end} {code} {type} {suffix}",
 ):
     """Save multiple target workbooks to `output_dir`.
 
@@ -104,9 +105,9 @@ def save_target_workbooks(
     for code, twb in targets.items():
         try:
             if date_end_str == date_start_str:
-                file_name = name_template_single.format(date=date_start_str, code=code, suffix=filename_suffix)
+                file_name = name_template_single.format(date=date_start_str, code=code, type=type_str, suffix=filename_suffix)
             else:
-                file_name = name_template_range.format(start=date_start_str, end=date_end_str, code=code, suffix=filename_suffix)
+                file_name = name_template_range.format(start=date_start_str, end=date_end_str, code=code, type=type_str, suffix=filename_suffix)
 
             out_path = output_dir / file_name
             if formatter is not None:
