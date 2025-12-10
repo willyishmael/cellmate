@@ -133,7 +133,7 @@ class AttendanceComparator(BaseProcessor):
                 employee_id_str = str(employee_id).strip()
 
                 key = f"{formatted_date}_{employee_id_str}"
-                status, timein, timeout = self._map_status(code)
+                status, timein, timeout = self.map_status_by_code(code)
                 
                 record = {
                     "date": formatted_date,

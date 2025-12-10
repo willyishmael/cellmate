@@ -119,7 +119,7 @@ class OvertimeComparator(BaseProcessor):
             employee_name = str(_name).strip() if _name else employee_name
             notes = str(_notes).strip() if _notes else notes
                 
-            status, timein, timeout = self.map_status(shift)
+            status, timein, timeout = self.map_status_by_shift(shift)
             
             key = f"{formatted_date}_{employee_id}"
             record = {

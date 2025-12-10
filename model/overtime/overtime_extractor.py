@@ -37,7 +37,6 @@ class OvertimeExtractor(BaseProcessor):
 
         overtime_index = self._process_source_sheet(source_ws, overtime_settings, targets, date_start_str, date_end_str)
         self._print_overtime_index(overtime_index, targets)
-        self._save_output_files(targets, output_dir, date_start_str, date_end_str)
         
         save_target_workbooks(
             targets=targets,
@@ -109,7 +108,7 @@ class OvertimeExtractor(BaseProcessor):
                 employee_id = _id if _id not in none else employee_id
                 employee_name = _name if _name not in none else employee_name
                 notes = _notes if _notes not in none else notes
-                status, timein, timeout = self.map_status(shift=shift)
+                status, timein, timeout = self.map_status_by_shift(shift)
 
                 # Skip rows outside date range or with invalid data
                 if not (start_dt <= parsed_date <= end_dt):

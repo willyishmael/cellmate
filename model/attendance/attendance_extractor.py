@@ -122,7 +122,7 @@ class AttendanceExtractor(BaseProcessor):
                     continue
 
                 formatted_date = format_date(date_raw)
-                status, timein, timeout = self._map_status(code)
+                status, timein, timeout = self.map_status_by_code(code)
                 ws_target = targets[company_code].active
                 ws_target.append([
                     formatted_date,

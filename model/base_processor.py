@@ -116,7 +116,7 @@ class BaseProcessor:
             raise ValueError("Workbook not loaded yet.")
         return [hris_wb[sheet] for sheet in hris_wb.sheetnames]
     
-    def map_status(self, code: str) -> tuple[str, str, str]:
+    def map_status_by_code(self, code: str) -> tuple[str, str, str]:
         """Map attendance codes to descriptions and time ranges."""
         code = str(code).strip().upper()
         mapping = {
@@ -131,7 +131,7 @@ class BaseProcessor:
         }
         return mapping.get(code, (code, "", ""))
     
-    def map_status(self, shift: str) -> tuple[str, str, str]:
+    def map_status_by_shift(self, shift: str) -> tuple[str, str, str]:
         """Map shift to descriptions and time ranges."""
         code = str(shift).strip().upper()
         mapping = {
