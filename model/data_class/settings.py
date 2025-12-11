@@ -35,6 +35,9 @@ class OvertimeOptDrvSettings:
     """Settings for overtime optdrv processing."""
     employee_id_col: int
     data_start_row: int
+    date_header_row: int
+    employee_name_col: int
     row_counter_col: int
     sheet_names: list[str]
+    company_code_col: int
     company_codes: dict

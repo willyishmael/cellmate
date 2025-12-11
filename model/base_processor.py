@@ -75,7 +75,10 @@ class BaseProcessor:
         self.overtime_optdrv_settings = OvertimeOptDrvSettings(
             employee_id_col=int(settings.get("employee_id_column") or 2),
             data_start_row=int(settings.get("data_start_row") or 5),
+            employee_name_col=int(settings.get("employee_name_column") or 3),
+            date_header_row=int(settings.get("date_header_row") or 4),
             row_counter_col=int(settings.get("row_counter_column") or 1),
+            company_code_col=int(settings.get("company_code_column") or 5),
             sheet_names=self._parse_comma_list(settings.get("sheet_names", "")),
             company_codes=settings.get("company_codes", {})
         )
