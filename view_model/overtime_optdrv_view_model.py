@@ -1,7 +1,7 @@
 from typing import Optional
 from model.overtime_optdrv.overtime_optdrv_comparator import OvertimeOptdrvComparator
 from model.overtime_optdrv.overtime_optdrv_extractor import OvertimeOptdrvExtractor
-from model.result import Result
+from model.data_class.result import Result
 
 class OvertimeOptDrvViewModel():
     def __init__ (

@@ -1,7 +1,7 @@
 from typing import Optional
 from model.attendance.attendance_extractor import AttendanceExtractor
 from model.attendance.attendance_comparator import AttendanceComparator
-from model.result import Result
+from model.data_class.result import Result
 
 class AttendanceViewModel:
     def __init__(

@@ -1,7 +1,7 @@
 from typing import Optional
 from model.overtime.overtime_comparator import OvertimeComparator
 from model.overtime.overtime_extractor import OvertimeExtractor
-from model.result import Result
+from model.data_class.result import Result
 
 class OvertimeViewModel():
     def __init__ (
