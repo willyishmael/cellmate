@@ -26,14 +26,14 @@ class OvertimeOptdrvComparator(BaseProcessor):
         source_wb = self.load_source_wb(overtime_file)
         hris_wb = self.load_hris_wb(hris_file)
         output_dir = self.get_output_dir(overtime_file)
-        source_ws = self.get_source_sheets(source_wb,overtime_settings.sheet_names)
+        source_ws = self.get_source_sheets(source_wb, overtime_settings.sheet_names)
         hris_ws = self.get_hris_source_sheets(hris_wb)
         
         print(f"Date Start: {date_start_str}, Date End: {date_end_str}")
         
         targets = {
             code: self.formatter.prepare_workbook(code, WorkbookType.COMPARE)
-            for code, checked in overtime_settings.company_codes()
+            for code, checked in overtime_settings.company_codes.items()
             if checked
         }
         
@@ -61,6 +61,8 @@ class OvertimeOptdrvComparator(BaseProcessor):
         date_end_str: str
     ) -> None:
         print(f"Processing source sheet: {ws.title}")
+        
+        overtime_index: dict[str, dict] = {}
             
         # Find last non-empty cell in row_counter_col, from bottom up
         last_data_row = settings.data_start_row
@@ -97,27 +99,21 @@ class OvertimeOptdrvComparator(BaseProcessor):
             
         for row in range(settings.data_start_row, last_data_row + 1):
             company_code = ws.cell(row=row, column=settings.company_code_col).value
-            
             if not company_code or company_code not in targets:
                 continue
             
-            target_wb = targets[company_code]
-            target_ws = target_wb.active
-            
             employee_id = ws.cell(row=row, column=settings.employee_id_col).value
             employee_name = ws.cell(row=row, column=settings.employee_name_col).value
+            if not employee_id:
+                continue
             
             for col in range(start_col, end_col + 1):
-                date = None
-                for hd_col, hd_date in header_dates:
-                    if hd_col == col:
-                        date = hd_date
-                        break
+                date = ws.cell(row=settings.date_header_row, column=col).value
+                overtime = ws.cell(row=row, column=col).value
+                
                 if not date:
                     continue
-                
-                overtime = ws.cell(row=row, column=col).value
-                if overtime is None or str(overtime).strip() == "" or overtime == 0:
+                if overtime in (None, "", " "):
                     continue
                 
                 time_in = "07:00"
@@ -131,27 +127,19 @@ class OvertimeOptdrvComparator(BaseProcessor):
                     "employee_id": employee_id,
                     "employee_name": employee_name,
                     "status": status,
-                    "overtime": overtime,
+                    "overtime": float(overtime),
                     "time_in": time_in,
                     "time_out": time_out,
                     "notes": "",
                     "company_code": company_code
                 }
             
-            if key in self.overtime_index:
-                # Existing record for same person/date -> increment overtime value
-                existing = self.overtime_index[key]
-                existing_val = existing.get("Overtime", 0)
-                existing_val_num = float(existing_val)
-                add_val = float(overtime) 
-                existing["Overtime"] = existing_val_num + add_val
-            else:
-                try:
-                    existing_overtime = float(overtime)
-                    record["Overtime"] = existing_overtime
-                except Exception:
-                    pass
-                self.overtime_index[key] = record
+                if key in overtime_index:
+                    overtime_index[key]["overtime"] += float(overtime)
+                else:
+                    overtime_index[key] = record
+                
+        self.overtime_index = overtime_index
                 
     def _process_hris_sheet(
         self, 
@@ -200,7 +188,6 @@ class OvertimeOptdrvComparator(BaseProcessor):
             if not employee_id_raw:
                 continue
             employee_id = str(employee_id_raw).strip()
-            employee_name = ws.cell(row=row, column=name_col).value.strip()
             
             for col in range(start_col, end_col + 1):
                 overtime = ws.cell(row=row, column=col).value
@@ -215,14 +202,15 @@ class OvertimeOptdrvComparator(BaseProcessor):
                 employee_id_str = str(employee_id).strip()
                 key = f"{formatted_date}_{employee_id_str}"
                 matched_overtime_record = self.overtime_index.get(key)
-                
+
                 if matched_overtime_record:
                     self._build_comparison_row(matched_overtime_record, overtime, targets)
     
     def _build_comparison_row(
         self, 
         matched_overtime_record: dict[str, any], 
-        hris_overtime, targets: dict[str, Workbook]
+        hris_overtime: float, 
+        targets: dict[str, Workbook]
     ) -> None:
         """Build and append a comparison row to the target worksheet.
         
