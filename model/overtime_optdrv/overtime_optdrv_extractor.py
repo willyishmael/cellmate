@@ -35,7 +35,7 @@ class OvertimeOptdrvExtractor(BaseProcessor):
         }
 
         for ws in source_ws:
-            self._process_source_sheet(ws, targets, date_start_str, date_end_str)
+            self._process_source_sheet(ws, overtime_settings, targets, date_start_str, date_end_str)
             
         save_target_workbooks(
             targets=targets,
