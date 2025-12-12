@@ -194,6 +194,10 @@ class OvertimePage(QWidget):
             QMessageBox.warning(self, "Warning", validated_multi_text_message)
             return {}
 
+        template: Template = self.attendance_templates[self.current_template_index] if self.current_template_index is not None else None
+        template_name = template.name if template else ""
+        settings["template_name"] = template_name
+
         settings.update(self.company_codes_layout.get_company_codes())
         settings.update(self.form_field_group.get_field_values())    
         settings.update(self.multi_text_field_group.get_field_values())

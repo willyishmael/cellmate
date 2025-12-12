@@ -58,6 +58,7 @@ class AttendanceComparator(BaseProcessor):
             date_start_str=date_start_str,
             date_end_str=date_end_str,
             type_str="Attendance Comparison",
+            template_name=settings.get("template_name"),
             formatter=self.formatter,
         )
     
