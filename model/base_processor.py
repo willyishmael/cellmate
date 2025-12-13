@@ -21,7 +21,8 @@ class BaseProcessor:
             row_counter_col=int(settings.get("row_counter_column") or 1),
             sheet_names=self._parse_comma_list(settings.get("sheet_names", "")),
             ignore_list=self._parse_comma_list(settings.get("ignore_list", "")),
-            company_codes=settings.get("company_codes", {})
+            company_codes=settings.get("company_codes", {}),
+            time_off_only=settings.get("time_off_only", False)
         )
 
         return self.attendance_settings
@@ -132,7 +133,7 @@ class BaseProcessor:
             "DLK":("Dinas Luar Kota (DLK)", "", ""),
             "OFF":("OFF", "", ""),
         }
-        return mapping.get(code, (code, "", ""))
+        return mapping.get(code, ("", "", ""))
     
     def map_status_by_shift(self, shift: str) -> tuple[str, str, str]:
         """Map shift to descriptions and time ranges."""

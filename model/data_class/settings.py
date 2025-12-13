@@ -12,6 +12,7 @@ class AttendanceSettings:
     sheet_names: list[str]
     ignore_list: list[str]
     company_codes: dict
+    time_off_only: bool
     
 @dataclass
 class OvertimeSettings:

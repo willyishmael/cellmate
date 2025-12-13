@@ -115,9 +115,15 @@ class AttendanceExtractor(BaseProcessor):
                 date = ws.cell(row=settings.date_header_row, column=col).value
                 if not code or date_raw is None :
                     continue
+                
+                if settings.time_off_only and code in {"H", "HM"}:
+                    continue
 
-                formatted_date = format_date(date_raw)
                 status, timein, timeout = self.map_status_by_code(code)
+                if status == "":
+                    continue
+                
+                formatted_date = format_date(date_raw)
                 ws_target = targets[company_code].active
                 ws_target.append([
                     formatted_date,
@@ -126,6 +132,5 @@ class AttendanceExtractor(BaseProcessor):
                     status,
                     0,  # Overtime
                     timein,
-                    timeout,
-                    ""   # Keterangan
+                    timeout
                 ])
