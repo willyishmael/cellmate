@@ -21,6 +21,8 @@ class OvertimeComparator(BaseProcessor):
         overtime_file: str,
         hris_file: str
     ) -> None:
+        self.overtime_index = {}
+        
         overtime_settings = self.apply_overtime_settings(settings)
         source_wb = self.load_source_wb(overtime_file)
         hris_wb = self.load_hris_wb(hris_file)
@@ -40,10 +42,9 @@ class OvertimeComparator(BaseProcessor):
             self._process_overtime_sheet(ws, overtime_settings, targets, date_start_str, date_end_str)
         for ws in hris_ws:
             self._process_hris_sheet(ws, date_start_str, date_end_str)
+        
+        self._print_overtime_index(self.overtime_index, targets)
             
-        # Save output files (use reusable helper)
-        print("Saving comparison output files...")
-        print(f"Targets Items: {list(targets.keys())}")
         save_target_workbooks(
             targets=targets,
             output_dir=output_dir,
@@ -62,7 +63,6 @@ class OvertimeComparator(BaseProcessor):
         date_start_str: str, 
         date_end_str: str
     ) -> None:
-        overtime_index: dict[str, dict] = {}
         # Determine company code by ws title
         ws_title = ws.title
         sheet_company_code = self._company_code_from_sheet_title(ws_title)
@@ -99,7 +99,7 @@ class OvertimeComparator(BaseProcessor):
                 
             # Parse date as a date object and compare ranges using dates
             formatted_date = format_date(date)
-            parsed_date = try_parse_date(formatted_date, default_year=self.settings.get("default_year"))
+            parsed_date = try_parse_date(formatted_date)
             if parsed_date is None:
                 continue
                 
@@ -124,7 +124,12 @@ class OvertimeComparator(BaseProcessor):
             status, timein, timeout = self.map_status_by_shift(shift)
             
             key = f"{formatted_date}_{employee_id}"
-            record = {
+            if key in self.overtime_index:
+                self.overtime_index[key]["overtime"] += overtime
+                continue
+            
+            self.overtime_index[key] = {
+                "hris_overtime": 0,
                 "date": formatted_date,
                 "employee_id": employee_id,
                 "employee_name": employee_name,
@@ -135,59 +140,10 @@ class OvertimeComparator(BaseProcessor):
                 "notes": notes,
                 "company_code": sheet_company_code
             }
-            
-            if key in overtime_index:
-                # Existing record for same person/date -> increment overtime value
-                existing = overtime_index[key]
-                existing_val = existing.get("Overtime", 0)
-                existing_val_num = float(existing_val)
-                add_val = float(overtime) 
-                existing["Overtime"] = existing_val_num + add_val
-                
-            else:
-                try:
-                    existing_overtime = float(overtime)
-                    record["Overtime"] = existing_overtime
-                except Exception:
-                    pass
-                overtime_index[key] = record
-        
-        self.overtime_index = overtime_index
-
-    def _build_comparison_row(
-        self, 
-        matched_overtime_record: dict[str, any], 
-        hris_overtime, targets: dict[str, Workbook]
-    ) -> None:
-        """Build and append a comparison row to the target worksheet.
-        
-        Args:
-            matched_overtime_record: The overtime record from manual data.
-            hris_overtime: The overtime value from HRIS.
-            targets: Dictionary of target workbooks keyed by company code.
-        """
-        sheet_company_code = matched_overtime_record.get("company_code")
-        target_ws = targets.get(sheet_company_code).active
-        difference = float(matched_overtime_record["overtime"]) == float(hris_overtime)
-        
-        target_ws.append([
-            matched_overtime_record["overtime"],  # Manual
-            hris_overtime,  # HRIS
-            difference,  # Difference
-            matched_overtime_record["date"],
-            matched_overtime_record["employee_id"],
-            matched_overtime_record["employee_name"],
-            matched_overtime_record["status"],
-            matched_overtime_record["overtime"],
-            matched_overtime_record["time_in"],
-            matched_overtime_record["time_out"],
-            matched_overtime_record["notes"]
-        ])
                 
     def _process_hris_sheet(
         self, 
         ws: Worksheet,
-        targets: dict[str, Workbook],
         date_start_str: str, 
         date_end_str: str
     ) -> None:
@@ -230,7 +186,6 @@ class OvertimeComparator(BaseProcessor):
             if not employee_id_raw:
                 continue
             employee_id = str(employee_id_raw).strip()
-            employee_name = ws.cell(row=row, column=name_col).value.strip()
             
             for col in range(start_col, end_col + 1):
                 overtime = ws.cell(row=row, column=col).value
@@ -247,8 +202,24 @@ class OvertimeComparator(BaseProcessor):
                 matched_overtime_record = self.overtime_index.get(key)
                 
                 if matched_overtime_record:
-                    self._build_comparison_row(matched_overtime_record, overtime, targets)
-                    
+                    matched_overtime_record["hris_overtime"] = float(overtime)
+
+    def _print_overtime_index(self, overtime_index: dict[str, dict], targets: dict[str, Workbook]):
+        for key, record in overtime_index.items():
+            target_ws = targets[record["company_code"]].active
+            target_ws.append([
+                record["overtime"],
+                record["hris_overtime"],
+                record["overtime"]-record["hris_overtime"],
+                record["date"],
+                record["employee_id"],
+                record["employee_name"],
+                record["status"],
+                record["overtime"],
+                record["time_in"],
+                record["time_out"],
+                record["notes"]
+            ])        
                     
                     
                 
