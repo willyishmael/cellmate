@@ -207,7 +207,12 @@ class AttendanceComparator(BaseProcessor):
                 if matched_record:
                     self._build_attendance_comparison_row(matched_record, status, targets)
 
-    def _build_attendance_comparison_row(self, matched_record: dict, hris_status, targets: dict) -> None:
+    def _build_attendance_comparison_row(
+        self, 
+        matched_record: dict, 
+        hris_status: str, 
+        targets: dict[str, Workbook]
+    ) -> None:
         """Build and append an attendance comparison row to the appropriate worksheet."""
         company_code = matched_record.get("company_code")
         ws_target = targets.get(company_code).active
