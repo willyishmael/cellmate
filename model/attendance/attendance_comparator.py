@@ -16,7 +16,7 @@ class AttendanceComparator(BaseProcessor):
     def __init__(self, formatter: Optional[ExportFileFormatter] = None):
         super().__init__()
         self.formatter = formatter or ExportFileFormatter()
-        self.attendance_index = {} # key -> record
+        self.attendance_index: dict[str, dict] = {} # key -> record
         self.duplicates = [] # optional list to collect duplicates
     
     def compare(
@@ -51,6 +51,8 @@ class AttendanceComparator(BaseProcessor):
             self._process_attendance_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
         for ws in hris_ws:
             self._process_hris_sheet(ws, attendance_settings, targets, date_start_str, date_end_str)
+            
+        self._build_attendance_comparison_row(self.attendance_index, targets)
             
         save_target_workbooks(
             targets=targets,
@@ -132,6 +134,7 @@ class AttendanceComparator(BaseProcessor):
                 status, timein, timeout = self.map_status_by_code(code)
                 
                 record = {
+                    "hris_status":"",
                     "date": formatted_date,
                     "employee_id": employee_id_str,
                     "employee_name": employee_name or "",
@@ -205,30 +208,28 @@ class AttendanceComparator(BaseProcessor):
                 matched_record = self.attendance_index.get(key)
                 
                 if matched_record:
-                    self._build_attendance_comparison_row(matched_record, status, targets)
+                    matched_record["hris_status"] = status
 
     def _build_attendance_comparison_row(
         self, 
-        matched_record: dict, 
-        hris_status: str, 
+        attendance_index: dict[str, dict], 
         targets: dict[str, Workbook]
     ) -> None:
-        """Build and append an attendance comparison row to the appropriate worksheet."""
-        company_code = matched_record.get("company_code")
-        ws_target = targets.get(company_code).active
-        difference = matched_record.get("status") == hris_status
-        ws_target.append([
-            matched_record.get("status"),  # Manual
-            hris_status,  # HRIS
-            difference,  # Difference
-            matched_record.get("date"),
-            matched_record.get("employee_id"),
-            matched_record.get("employee_name"),
-            matched_record.get("status"),
-            matched_record.get("overtime"),
-            matched_record.get("timein"),
-            matched_record.get("timeout"),
-            matched_record.get("notes"),
-        ])
+        for key, record in attendance_index.items():
+            company_code = record.get("company_code")
+            ws_target = targets.get(company_code).active
+            ws_target.append([
+                record.get("status"),  # Manual
+                record.get("hris_status"),  # HRIS
+                record.get("status") == record.get("hris_status"),  # Difference
+                record.get("date"),
+                record.get("employee_id"),
+                record.get("employee_name"),
+                record.get("status"),
+                record.get("overtime"),
+                record.get("timein"),
+                record.get("timeout"),
+                record.get("notes"),
+            ])
 
         
