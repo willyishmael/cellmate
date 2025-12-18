@@ -22,13 +22,14 @@ class OvertimeOptdrvComparator(BaseProcessor):
         overtime_file: str,
         hris_file: str
     ) -> None:
+        self.overtime_index = {}
+        
         overtime_settings = self.apply_overtime_optdrv_settings(settings)
         source_wb = self.load_source_wb(overtime_file)
         hris_wb = self.load_hris_wb(hris_file)
         output_dir = self.get_output_dir(overtime_file)
         source_ws = self.get_source_sheets(source_wb, overtime_settings.sheet_names)
         hris_ws = self.get_hris_source_sheets(hris_wb)
-        
         print(f"Date Start: {date_start_str}, Date End: {date_end_str}")
         
         targets = {
@@ -41,7 +42,9 @@ class OvertimeOptdrvComparator(BaseProcessor):
             self._process_overtime_sheet(ws, overtime_settings, targets, date_start_str, date_end_str)
         for ws in hris_ws:
             self._process_hris_sheet(ws, overtime_settings, targets, date_start_str, date_end_str)
-            
+        
+        self._print_overtime_index(self.overtime_index, targets)
+        
         save_target_workbooks(
             targets=targets,
             output_dir=output_dir,
@@ -62,8 +65,6 @@ class OvertimeOptdrvComparator(BaseProcessor):
     ) -> None:
         print(f"Processing source sheet: {ws.title}")
         
-        overtime_index: dict[str, dict] = {}
-            
         # Find last non-empty cell in row_counter_col, from bottom up
         last_data_row = settings.data_start_row
         for row in range(ws.max_row, settings.data_start_row - 1, -1):
@@ -123,6 +124,7 @@ class OvertimeOptdrvComparator(BaseProcessor):
                 formatted_date = format_date(date)
                 key = f"{formatted_date}_{employee_id}"
                 record = {
+                    "hris_overtime": 0,
                     "date": formatted_date,
                     "employee_id": employee_id,
                     "employee_name": employee_name,
@@ -134,12 +136,10 @@ class OvertimeOptdrvComparator(BaseProcessor):
                     "company_code": company_code
                 }
             
-                if key in overtime_index:
-                    overtime_index[key]["overtime"] += float(overtime)
+                if key in self.overtime_index:
+                    self.overtime_index[key]["overtime"] += float(overtime)
                 else:
-                    overtime_index[key] = record
-                
-        self.overtime_index = overtime_index
+                    self.overtime_index[key] = record
                 
     def _process_hris_sheet(
         self, 
@@ -204,36 +204,22 @@ class OvertimeOptdrvComparator(BaseProcessor):
                 matched_overtime_record = self.overtime_index.get(key)
 
                 if matched_overtime_record:
-                    self._build_comparison_row(matched_overtime_record, overtime, targets)
+                    matched_overtime_record["hris_overtime"] += float(overtime)
     
-    def _build_comparison_row(
-        self, 
-        matched_overtime_record: dict[str, any], 
-        hris_overtime: float, 
-        targets: dict[str, Workbook]
-    ) -> None:
-        """Build and append a comparison row to the target worksheet.
-        
-        Args:
-            matched_overtime_record: The overtime record from manual data.
-            hris_overtime: The overtime value from HRIS.
-            targets: Dictionary of target workbooks keyed by company code.
-        """
-        sheet_company_code = matched_overtime_record.get("company_code")
-        target_ws = targets.get(sheet_company_code).active
-        difference = float(matched_overtime_record["overtime"]) == float(hris_overtime)
-        
-        target_ws.append([
-            matched_overtime_record["overtime"],  # Manual
-            hris_overtime,  # HRIS
-            difference,  # Difference
-            matched_overtime_record["date"],
-            matched_overtime_record["employee_id"],
-            matched_overtime_record["employee_name"],
-            matched_overtime_record["status"],
-            matched_overtime_record["overtime"],
-            matched_overtime_record["time_in"],
-            matched_overtime_record["time_out"],
-            matched_overtime_record["notes"]
-        ])
+    def _print_overtime_index(self, overtime_index: dict[str, dict], targets: dict[str, Workbook]):
+        for key, record in overtime_index.items():
+            target_ws = targets[record["company_code"]].active
+            target_ws.append([
+                record["overtime"],
+                record["hris_overtime"],
+                record["overtime"]-record["hris_overtime"],
+                record["date"],
+                record["employee_id"],
+                record["employee_name"],
+                record["status"],
+                record["overtime"],
+                record["time_in"],
+                record["time_out"],
+                record["notes"]
+            ])   
     
