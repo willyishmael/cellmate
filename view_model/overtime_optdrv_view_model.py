@@ -1,18 +1,18 @@
 from typing import Optional
-from model.overtime.overtime_comparator import OvertimeComparator
-from model.overtime.overtime_extractor import OvertimeExtractor
+from model.overtime_optdrv.overtime_optdrv_comparator import OvertimeOptdrvComparator
+from model.overtime_optdrv.overtime_optdrv_extractor import OvertimeOptdrvExtractor
 from model.data_class.result import Result
 
-class OvertimeViewModel():
+class OvertimeOptDrvViewModel():
     def __init__ (
         self,
-        extractor: Optional[OvertimeExtractor] = None,
-        comparator: Optional[OvertimeComparator] = None
+        extractor: Optional[OvertimeOptdrvExtractor] = None,
+        comparator: Optional[OvertimeOptdrvComparator] = None
     ):
         self.overtime_data: list = []
         self.errors: list[str] = []
-        self.extractor = extractor or OvertimeExtractor()
-        self.comparator = comparator or OvertimeComparator()
+        self.extractor = extractor or OvertimeOptdrvExtractor()
+        self.comparator = comparator or OvertimeOptdrvComparator()
         
     def extract_overtime(
         self,

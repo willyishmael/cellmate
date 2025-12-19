@@ -1,6 +1,6 @@
 [
   {
-    "name": "PLANT",
+    "name": "PLANT kws",
     "template_type": "attendance",
     "settings": {
       "company_codes": {
@@ -14,8 +14,303 @@
       "data_start_row": "7",
       "date_header_row": "5",
       "row_counter_column": "1",
-      "sheet_names": "26 SEP - 25 OKT 2025",
-      "ignore_list": "OBI-1072322, OBI-29771024"
+      "sheet_names": "26 NOV - 25 DES 2025",
+      "ignore_list": "OBI-1072322, OBI-29771024",
+      "time_off_only": false,
+      "template_name": "PLANT kws"
+    }
+  },
+  {
+    "name": "GA kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "6",
+      "date_header_row": "4",
+      "row_counter_column": "3",
+      "sheet_names": "Format Baru",
+      "ignore_list": "",
+      "time_off_only": false,
+      "template_name": "GA kws"
+    }
+  },
+  {
+    "name": "GA kws",
+    "template_type": "overtime",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "3",
+      "data_start_row": "10",
+      "row_counter_column": "11",
+      "sheet_names": "DRIVER GA PTM, DRIVER GA TMP, DAPUR GA PTM, DAPUR GA TMP"
+    }
+  },
+  {
+    "name": "LOG kws",
+    "template_type": "overtime",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "data_start_row": "7",
+      "row_counter_column": "10",
+      "sheet_names": "PTM, TMP"
+    }
+  },
+  {
+    "name": "LOG kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "6",
+      "date_header_row": "5",
+      "row_counter_column": "1",
+      "sheet_names": "NOV - DES 2025",
+      "ignore_list": "OBI-2004923",
+      "time_off_only": false,
+      "template_name": "LOG kws"
+    }
+  },
+  {
+    "name": "SUP kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "5",
+      "date_header_row": "4",
+      "row_counter_column": "1",
+      "sheet_names": "SUPPORT",
+      "ignore_list": "OBI-0020120, OBI-0030120, OBI-1759423, OBI-5590621",
+      "time_off_only": false,
+      "template_name": "SUP kws"
+    }
+  },
+  {
+    "name": "MSC kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "5",
+      "date_header_row": "4",
+      "row_counter_column": "1",
+      "sheet_names": "MSC",
+      "ignore_list": "OBI-24360124",
+      "time_off_only": false,
+      "template_name": "MSC kws"
+    }
+  },
+  {
+    "name": "MSC kws",
+    "template_type": "overtime",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "3",
+      "data_start_row": "10",
+      "row_counter_column": "11",
+      "sheet_names": "PM, TMP, PTM"
+    }
+  },
+  {
+    "name": "LOG kws",
+    "template_type": "overtime",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "data_start_row": "7",
+      "row_counter_column": "10",
+      "sheet_names": "TMP, PTM"
+    }
+  },
+  {
+    "name": "PLANT kws",
+    "template_type": "overtime",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "3",
+      "data_start_row": "8",
+      "row_counter_column": "10",
+      "sheet_names": "PM, PTM, TMP"
+    }
+  },
+  {
+    "name": "PROD kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "6",
+      "date_header_row": "5",
+      "row_counter_column": "1",
+      "sheet_names": "ABSEN PENGAWAS & CHEKER",
+      "ignore_list": "",
+      "time_off_only": false,
+      "template_name": "PROD kws"
+    }
+  },
+  {
+    "name": "OPTDRV kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "4",
+      "employee_name_column": "2",
+      "company_code_column": "5",
+      "data_start_row": "6",
+      "date_header_row": "5",
+      "row_counter_column": "1",
+      "sheet_names": "OPERATOR RENTAL DAN PRO, DRIVER RENTAL DAN PRO",
+      "ignore_list": "",
+      "time_off_only": true,
+      "template_name": "PROD kws"
+    }
+  },
+  {
+    "name": "OPTDRV kws",
+    "template_type": "overtime_optdrv",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "3",
+      "employee_name_column": "2",
+      "company_code_column": "5",
+      "data_start_row": "4",
+      "date_header_row": "3",
+      "row_counter_column": "1",
+      "sheet_names": "REKAP DRIVER, REKAP OPR"
+    }
+  },
+  {
+    "name": "PROD kws",
+    "template_type": "overtime",
+    "settings": {
+      "template_name": "PLANT kws",
+      "company_codes": {
+        "PM": false,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "data_start_row": "6",
+      "row_counter_column": "10",
+      "sheet_names": "PTM, TMP"
+    }
+  },
+  {
+    "name": "MPE kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "7",
+      "date_header_row": "6",
+      "row_counter_column": "1",
+      "sheet_names": "Absen 26 Oct -25 Nov 2025",
+      "ignore_list": "OBI-31740225, OBI-31750225",
+      "time_off_only": false,
+      "template_name": "MPE kws"
+    }
+  },
+  {
+    "name": "MPE kws",
+    "template_type": "overtime",
+    "settings": {
+      "template_name": "LOG kws",
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "3",
+      "data_start_row": "10",
+      "row_counter_column": "11",
+      "sheet_names": "PM2, PTM2, TMP2"
+    }
+  },
+  {
+    "name": "HSSE kws",
+    "template_type": "attendance",
+    "settings": {
+      "company_codes": {
+        "PM": true,
+        "PTM": true,
+        "TMP": true
+      },
+      "employee_id_column": "2",
+      "employee_name_column": "3",
+      "company_code_column": "5",
+      "data_start_row": "5",
+      "date_header_row": "4",
+      "row_counter_column": "1",
+      "sheet_names": "HSSE",
+      "ignore_list": "OBI-24390124, OBI-24800124, OBI-5950721",
+      "time_off_only": false,
+      "template_name": ""
     }
   }
 ]

@@ -169,19 +169,20 @@ class AttendancePage(QWidget):
 
     def on_new_template(self):
         name, ok = QInputDialog.getText(self, "New Template", "Enter template name:")
-        if not ok or not name.strip():
+        name = name.strip() 
+        if not ok or not name:
             return
         
         settings = self.collect_settings_from_fields()
         if settings == {}:
             return
         
-        self.template_vm.add_template(name.strip(), self.template_type, settings)
+        self.template_vm.add_template(name, self.template_type, settings)
         self.load_templates_to_dropdown()
         
         dropdown = self.template_bar.template_dropdown
         for i in range(dropdown.count()):
-            if dropdown.itemText(i) == name.strip():
+            if dropdown.itemText(i) == name:
                 dropdown.setCurrentIndex(i)
                 break
 
@@ -207,6 +208,11 @@ class AttendancePage(QWidget):
         settings.update(self.form_field_group.get_field_values())    
         settings.update(self.multi_text_field_group.get_field_values())
         settings.update({"time_off_only": self.checkbox_time_off_only.isChecked()})
+        
+        template: Template = self.attendance_templates[self.current_template_index] if self.current_template_index is not None else None
+        template_name = template.name if template else ""
+        settings["template_name"] = template_name
+        
         return settings
 
     def on_extract(self):

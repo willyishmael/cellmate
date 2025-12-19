@@ -1,8 +1,34 @@
+from enum import Enum
+from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
+class WorkbookType(Enum):
+    EXTRACT = "extract"
+    COMPARE = "compare"
+
 class ExportFileFormatter:
+    
+    def prepare_workbook(self, company_code: str, type: WorkbookType) -> Workbook:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = company_code
+        header = []
+        
+        extract_headers = ["Tanggal", "Employee ID", "Nama Karyawan", "Status",
+                           "Overtime", "Time In", "Time Out", "Keterangan"]
+        compare_headers = ["Manual", "HRIS", "Difference"] + extract_headers
+        
+        if type == WorkbookType.EXTRACT:
+            header = extract_headers
+        elif type == WorkbookType.COMPARE:
+            header = compare_headers
+        else:
+            raise ValueError(f"Unknown type for workbook preparation: {type}")
+        
+        ws.append(header)
+        return wb
     
     def format_worksheet(self, ws: Worksheet):
         # Auto-fit columns
