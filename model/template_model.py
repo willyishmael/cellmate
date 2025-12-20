@@ -1,6 +1,8 @@
 import json
 from typing import List, Dict, Any
 
+from model.helper.app_data import ensure_templates_json
+
 class Template:
     def __init__(self, name: str, template_type: str, settings: Dict[str, Any]):
         self.name = name
@@ -24,12 +26,12 @@ class Template:
 
 # Utility methods for Template list <-> JSON file
 class TemplateUtils:
-    TEMPLATE_FILE = "data/templates.json"
+    TEMPLATE_FILE = "data/templates.json"  # legacy/default-bundled location
     @staticmethod
     def load_templates_from_file(path: str = None) -> List[Template]:
         """Load templates from JSON file. Uses default TEMPLATE_FILE if path not provided."""
         if path is None:
-            path = TemplateUtils.TEMPLATE_FILE
+            path = str(ensure_templates_json())
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -43,7 +45,9 @@ class TemplateUtils:
     def save_templates_to_file(path: str = None, templates: List[Template] = None):
         """Save templates to JSON file. Uses default TEMPLATE_FILE if path not provided."""
         if path is None:
-            path = TemplateUtils.TEMPLATE_FILE
+            path = str(ensure_templates_json())
+        if templates is None:
+            templates = []
         with open(path, 'w', encoding='utf-8') as f:
             json.dump([t.to_dict() for t in templates], f, indent=2)
 
