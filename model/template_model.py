@@ -26,10 +26,9 @@ class Template:
 
 # Utility methods for Template list <-> JSON file
 class TemplateUtils:
-    TEMPLATE_FILE = "data/templates.json"  # legacy/default-bundled location
     @staticmethod
     def load_templates_from_file(path: str = None) -> List[Template]:
-        """Load templates from JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        """Load templates from JSON file. Uses user-writable templates location if path not provided."""
         if path is None:
             path = str(ensure_templates_json())
         try:
@@ -43,7 +42,7 @@ class TemplateUtils:
 
     @staticmethod
     def save_templates_to_file(path: str = None, templates: List[Template] = None):
-        """Save templates to JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        """Save templates to JSON file. Uses user-writable templates location if path not provided."""
         if path is None:
             path = str(ensure_templates_json())
         if templates is None:
@@ -53,10 +52,10 @@ class TemplateUtils:
 
     @staticmethod
     def import_templates_from_file(path: str = None) -> List[Template]:
-        """Import templates from JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        """Import templates from JSON file. Uses user-writable templates location if path not provided."""
         return TemplateUtils.load_templates_from_file(path)
 
     @staticmethod
     def export_templates_to_file(path: str = None, templates: List[Template] = None):
-        """Export templates to JSON file. Uses default TEMPLATE_FILE if path not provided."""
+        """Export templates to JSON file. Uses user-writable templates location if path not provided."""
         TemplateUtils.save_templates_to_file(path, templates)
