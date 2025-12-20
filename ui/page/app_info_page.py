@@ -93,7 +93,7 @@ class AppInfoPage(QWidget):
         elif status == "current":
             # Current: green
             self._set_status(
-                f"You are up to date. (Current: {self._app_version}, Latest: {latest_version})",
+                f"You are up to date (Current: {self._app_version}, Latest: {latest_version}).",
                 "#2e7d32",
                 False,
             )
@@ -107,7 +107,7 @@ class AppInfoPage(QWidget):
         else:
             # Unknown state
             self._set_status(
-                f"Could not determine update status. Latest reported: {latest_version}",
+                f"Could not determine update status (Latest reported: {latest_version}).",
                 "#555",
                 False,
             )
