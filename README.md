@@ -34,7 +34,8 @@ cellmate/
 │   │   ├── app_data.py          # Platform-specific app-data paths
 │   │   ├── date_utils.py        # Date parsing & formatting
 │   │   ├── export_file_formatter.py  # Workbook header creation
-│   │   └── save_utils.py        # Safe workbook saving
+│   │   ├── save_utils.py        # Safe workbook saving
+│   │   └── update_checker.py    # Check for application updates
 │   └── data_class/
 │       └── settings.py          # Settings dataclasses
 ├── ui/
