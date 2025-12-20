@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout
 )
 
+from model.version import get_version
 from ui.page.attendance_page import AttendancePage
 from ui.page.overtime_page import OvertimePage
 from ui.page.overtime_optdrv_page import OvertimeOptDrvPage
@@ -13,7 +14,7 @@ from view_model.template_view_model import TemplateViewModel
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Cellmate")
+        self.setWindowTitle(f"Cellmate {get_version()}")
         self.setGeometry(200, 200, 800, 600)
 
         # Central widget with stacked pages
