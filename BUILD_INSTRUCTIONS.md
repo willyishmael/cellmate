@@ -22,15 +22,31 @@ Building standalone executables (`.exe` for Windows, `.app` for macOS) using PyI
 ## Windows Build
 
 ### Command
-```bash
-pyinstaller --noconfirm --windowed --name Cellmate --add-data "data\\templates.json;data" --collect-all PySide6 main.py
+```powershell
+pyinstaller `
+  --noconfirm `
+  --windowed `
+  --name Cellmate `
+  --add-data "data\\templates.json;data" `
+  --hidden-import=PySide6.QtCore `
+  --hidden-import=PySide6.QtGui `
+  --hidden-import=PySide6.QtWidgets `
+  --hidden-import=openpyxl `
+  --exclude-module=matplotlib `
+  --exclude-module=PIL `
+  --exclude-module=numpy `
+  --exclude-module=pandas `
+  --exclude-module=scipy `
+  --exclude-module=tkinter `
+  main.py
 ```
 
 ### Output
-- **One directory (recommended)**: `dist\Cellmate\Cellmate.exe`
-  - Larger but more reliable with PySide6.
-- **Single file (alternative)**: Add `--onefile` flag, outputs `dist\Cellmate.exe`
-  - Slower startup, can trigger antivirus warnings.
+- **One directory**: `dist\Cellmate\Cellmate.exe`
+  - Final size: ~100-150 MB
+  - More reliable with PySide6, faster startup
+- **Single file (not recommended)**: Add `--onefile` flag, outputs `dist\Cellmate.exe`
+  - Slower startup, can trigger antivirus warnings
 
 ### Run
 - Double-click `Cellmate.exe` or run from command line: `.\dist\Cellmate\Cellmate.exe`
@@ -47,11 +63,26 @@ pyinstaller --noconfirm --windowed --name Cellmate --add-data "data\\templates.j
 
 ### Command
 ```bash
-pyinstaller --noconfirm --windowed --name Cellmate --add-data "data/templates.json:data" --collect-all PySide6 main.py
+pyinstaller \
+  --noconfirm \
+  --windowed \
+  --name Cellmate \
+  --add-data "data/templates.json:data" \
+  --hidden-import=PySide6.QtCore \
+  --hidden-import=PySide6.QtGui \
+  --hidden-import=PySide6.QtWidgets \
+  --hidden-import=openpyxl \
+  --exclude-module=matplotlib \
+  --exclude-module=PIL \
+  --exclude-module=numpy \
+  --exclude-module=pandas \
+  --exclude-module=scipy \
+  --exclude-module=tkinter \
+  main.py
 ```
 
 ### Output
-- `dist/Cellmate.app/` — a macOS application bundle
+- `dist/Cellmate.app/` — a macOS application bundle (~100-150 MB)
 
 ### Run
 - Double-click `Cellmate.app` in Finder, or:
@@ -76,17 +107,15 @@ hdiutil create -volname Cellmate -srcfolder dist/Cellmate.app -ov -format UDZO C
 ## Troubleshooting
 
 ### Missing Modules at Runtime
-If the app crashes with "No module named X", add the module to the PyInstaller command:
+If the app crashes with "No module named X", add `--hidden-import=X` to the build command.
 
-**Windows example:**
-```bash
-pyinstaller --noconfirm --windowed --name Cellmate --add-data "data\\templates.json;data" --collect-all PySide6 --hidden-import=openpyxl main.py
-```
+**Example:** Add `--hidden-import=et_xmlfile` if openpyxl dependencies are missing.
 
-**macOS example:**
-```bash
-pyinstaller --noconfirm --windowed --name Cellmate --add-data "data/templates.json:data" --collect-all PySide6 --hidden-import=openpyxl main.py
-```
+### Size Optimization Notes
+- **`--collect-all PySide6`** pulls in 500+ MB of unused Qt modules (3D, multimedia, web engine, etc.)
+- **Targeted imports** only include QtCore, QtGui, QtWidgets (~100 MB)
+- **Exclude modules** prevent PyInstaller from bundling large unused libraries
+- If you need additional PySide6 modules, add them individually: `--hidden-import=PySide6.QtNetwork`
 
 ### Build Artifacts
 - `build/` — intermediate build files (safe to delete)
