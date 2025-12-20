@@ -73,7 +73,7 @@ def fetch_latest_release(repo_full_name: Optional[str] = None) -> Tuple[str, str
             return _normalize_version(tag), html_url
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            raise RuntimeError(f"No releases found for repo '{repo}'. Create a GitHub release.") from e
+            raise RuntimeError(f"Repository '{repo}' not found or has no releases.") from e
         raise RuntimeError(f"GitHub API error {e.code}: {e.reason}") from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error: {e}") from e
