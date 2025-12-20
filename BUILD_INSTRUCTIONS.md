@@ -96,7 +96,7 @@ pyinstaller --noconfirm --windowed --name Cellmate --add-data "data/templates.js
 To clean up and rebuild:
 ```bash
 rm -rf build dist Cellmate.spec  # macOS/Linux
-rmdir /s build dist  # Windows
+rmdir /s /q build dist  # Windows
 ```
 
 ---
