@@ -62,7 +62,12 @@ def fetch_latest_release(repo_full_name: Optional[str] = None) -> Tuple[str, str
                 raise RuntimeError(f"GitHub API returned status {resp.status}")
             data = json.loads(resp.read().decode("utf-8"))
             tag = data.get("tag_name") or ""
-            html_url = data.get("html_url") or data.get("url") or url
+            raw_html_url = data.get("html_url") or ""
+            if raw_html_url.startswith("https://github.com/"):
+                html_url = raw_html_url
+            else:
+                # Fallback to a safe GitHub web URL for the repo's latest release
+                html_url = f"https://github.com/{repo}/releases/latest"
             if not tag:
                 raise RuntimeError("No tag_name in latest release response")
             return _normalize_version(tag), html_url
