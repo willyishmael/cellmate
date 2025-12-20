@@ -26,6 +26,7 @@ cellmate/
 ├── model/
 │   ├── base_processor.py        # Shared processing logic
 │   ├── template_model.py        # Template CRUD
+│   ├── version.py               # Centralized version management
 │   ├── attendance/              # Attendance extraction/comparison
 │   ├── overtime/                # Overtime extraction/comparison
 │   ├── overtime_optdrv/         # Optional drive extraction/comparison
