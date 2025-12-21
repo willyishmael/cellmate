@@ -28,6 +28,7 @@ pyinstaller `
   --windowed `
   --name Cellmate `
   --icon=data\icon.ico `
+  --add-data "data\\icon.ico;data" `
   --add-data "data\\templates.json;data" `
   --hidden-import=PySide6.QtCore `
   --hidden-import=PySide6.QtGui `
@@ -43,6 +44,8 @@ pyinstaller `
 ```
 
 **Note:** Omit `--icon` line if you don't have an icon file yet. Icon file should be `.ico` format (256x256 or 512x512 recommended).
+
+If the window/taskbar still shows a default icon, ensure the app sets the runtime icon (done in `main.py`) and that `data/icon.ico` is included via `--add-data`. Windows may cache file icons; if the `.exe` icon doesn't update, rebuild to a new name or clear the icon cache.
 
 ### Output
 - **One directory**: `dist\Cellmate\Cellmate.exe`
