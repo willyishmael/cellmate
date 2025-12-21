@@ -18,7 +18,7 @@ if __name__ == "__main__":
             icon_file = "data/icon.ico"
         icon_path = resource_path(icon_file)
         app.setWindowIcon(QIcon(str(icon_path)))
-    except Exception:
+    except (FileNotFoundError, OSError):
         # Fail silently if icon missing; app still runs
         pass
     window = MainWindow()
