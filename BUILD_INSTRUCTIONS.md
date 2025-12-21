@@ -27,6 +27,7 @@ pyinstaller `
   --noconfirm `
   --windowed `
   --name Cellmate `
+  --icon=data\icon.ico `
   --add-data "data\\templates.json;data" `
   --hidden-import=PySide6.QtCore `
   --hidden-import=PySide6.QtGui `
@@ -40,6 +41,8 @@ pyinstaller `
   --exclude-module=tkinter `
   main.py
 ```
+
+**Note:** Omit `--icon` line if you don't have an icon file yet. Icon file should be `.ico` format (256x256 or 512x512 recommended).
 
 ### Output
 - **One directory**: `dist\Cellmate\Cellmate.exe`
@@ -67,6 +70,7 @@ pyinstaller \
   --noconfirm \
   --windowed \
   --name Cellmate \
+  --icon=data/icon.icns \
   --add-data "data/templates.json:data" \
   --hidden-import=PySide6.QtCore \
   --hidden-import=PySide6.QtGui \
@@ -80,6 +84,8 @@ pyinstaller \
   --exclude-module=tkinter \
   main.py
 ```
+
+**Note:** Omit `--icon` line if you don't have an icon file yet. Icon file should be `.icns` format for macOS.
 
 ### Output
 - `dist/Cellmate.app/` — a macOS application bundle (~100-150 MB)
