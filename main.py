@@ -11,7 +11,12 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     # Set application window icon (taskbar/titlebar)
     try:
-        icon_path = resource_path("data/icon.ico")
+        # Use platform-appropriate icon format
+        if sys.platform == "darwin":
+            icon_file = "data/icon.icns"
+        else:
+            icon_file = "data/icon.ico"
+        icon_path = resource_path(icon_file)
         app.setWindowIcon(QIcon(str(icon_path)))
     except Exception:
         # Fail silently if icon missing; app still runs
