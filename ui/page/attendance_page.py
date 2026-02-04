@@ -31,6 +31,17 @@ class AttendancePage(QWidget):
         self.drop_area_2 = DropArea("Drop HRIS Export Excel File Here")
         left_panel.addWidget(self.drop_area_1, 1)
         left_panel.addWidget(self.drop_area_2, 1)
+        
+        # Buttons at the bottom of left panel
+        btn_extract = QPushButton("📊 Extract Data")
+        btn_compare = QPushButton("🔍 Compare Data")
+        btn_extract.setFixedHeight(40)
+        btn_compare.setFixedHeight(40)
+        btn_extract.clicked.connect(self.on_extract)
+        btn_compare.clicked.connect(self.on_compare)
+        left_panel.addWidget(btn_extract)
+        left_panel.addWidget(btn_compare)
+        
         main_layout.addLayout(left_panel, 2)
 
         # Right panel (settings)
@@ -90,14 +101,6 @@ class AttendancePage(QWidget):
         right_panel.addLayout(form_layout)
         right_panel.addItem(QSpacerItem(20, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-        btn_extract = QPushButton("📊 Extract Data")
-        btn_compare = QPushButton("🔍 Compare Data")
-        btn_extract.setFixedHeight(40)
-        btn_compare.setFixedHeight(40)
-        btn_extract.clicked.connect(self.on_extract)
-        btn_compare.clicked.connect(self.on_compare)
-        right_panel.addWidget(btn_extract)
-        right_panel.addWidget(btn_compare)
         main_layout.addLayout(right_panel, 3)
 
         self.setLayout(main_layout)
