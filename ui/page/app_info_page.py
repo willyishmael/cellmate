@@ -1,8 +1,12 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal
+import os
+import webbrowser
+import subprocess
+import sys
 
 from model.helper.app_data import user_templates_path
-from model.helper.update_checker import compare_versions, fetch_latest_release
+from model.helper.update_checker import compare_versions, fetch_latest_release, DEFAULT_REPO
 from model.version import get_version
 
 class AppInfoPage(QWidget):
@@ -40,31 +44,70 @@ class AppInfoPage(QWidget):
             "- Template management with reusable presets<br>"
             "- Company code detection in sheet titles<br>"
             "- Robust date parsing and safe save fallback for Excel<br><br>"
-            "<b>Where templates are stored</b><br>"
-            f"{templates_path}<br><br>"
             "<b>Tips</b><br>"
             "- First launch copies bundled templates here if missing<br>"
             "- Export/import templates from the Templates tab to share presets<br>"
-            "- Keep source files in .xlsx (convert .xls/.xlsb before processing)"
+            "- Keep source files in .xlsx (convert .xls/.xlsb before processing)<br><br>"
+            "<b>Where templates are stored</b><br>"
+            f"{templates_path}<br><br>"
         )
         layout.addWidget(info)
 
+        # Open templates folder button
+        btn_open_folder = QPushButton("📁 Open Templates Folder")
+        btn_open_folder.setStyleSheet("padding: 6px 10px;")
+        btn_open_folder.setMaximumWidth(200)
+        btn_open_folder.clicked.connect(self._open_templates_folder)
+        layout.addWidget(btn_open_folder)
+
+        # View releases button (kept visible) — update checks run automatically on show
+        self.btn_view_releases = QPushButton("🔗 View Releases")
+        self.btn_view_releases.setStyleSheet("padding: 6px 10px;")
+        self.btn_view_releases.setMaximumWidth(200)
+        self.btn_view_releases.clicked.connect(self._open_releases_page)
+        layout.addWidget(self.btn_view_releases)
+
+        # Status label for update checks
         self.status_label = QLabel("Status: Not checked")
         self.status_label.setStyleSheet("font-size: 12px; color: #555;")
         self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
 
-        self.check_button = QPushButton("Check for updates")
-        self.check_button.setStyleSheet("padding: 6px 10px;")
-        self.check_button.clicked.connect(self._on_check_updates)
-        layout.addWidget(self.check_button)
-
         self.setLayout(layout)
 
         # Keep references
         self._app_version = app_version
         self._worker = None
+        self._checked_on_show = False
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Run update check once when the page is first shown
+        if not self._checked_on_show:
+            self._checked_on_show = True
+            self._on_check_updates()
+
+    def _open_templates_folder(self):
+        path = str(user_templates_path().parent)
+        try:
+            if sys.platform == 'darwin':  # macOS
+                subprocess.Popen(['open', path])
+            elif sys.platform == 'win32':  # Windows
+                subprocess.Popen(['explorer', path])
+            else:  # Linux
+                subprocess.Popen(['xdg-open', path])
+        except Exception as e:
+            print(f"Error opening folder: {e}")
+
+    def _open_releases_page(self):
+        # Open the repository releases page in the default browser.
+        repo = os.environ.get("GITHUB_REPO") or DEFAULT_REPO
+        url = f"https://github.com/{repo}/releases"
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            print(f"Error opening releases page: {e}")
 
     def _set_status(self, html: str, color: str, open_links: bool = False):
         self.status_label.setText(html)
@@ -75,11 +118,15 @@ class AppInfoPage(QWidget):
         if self._worker and self._worker.isRunning():
             return
         self._set_status("Checking for updates...", "#555")
-        self.check_button.setEnabled(False)
+        # disable view releases while checking
+        try:
+            self.btn_view_releases.setEnabled(False)
+        except Exception:
+            pass
         self._worker = _UpdateCheckWorker(self._app_version)
         self._worker.result.connect(self._on_update_result)
         self._worker.error.connect(self._on_update_error)
-        self._worker.finished.connect(lambda: self.check_button.setEnabled(True))
+        self._worker.finished.connect(lambda: self.btn_view_releases.setEnabled(True))
         self._worker.start()
 
     def _on_update_result(self, status: str, latest_version: str, url: str):
