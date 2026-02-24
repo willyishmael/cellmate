@@ -29,6 +29,11 @@ class AttendanceComparator(BaseProcessor):
     ) -> None:
         """Run the comparison process with given settings and files."""
         print("Starting comparison process...")
+        
+        # Clear previous comparison data
+        self.attendance_index.clear()
+        self.duplicates.clear()
+        
         attendance_settings = self.apply_attendance_settings(settings)
         source_wb = self.load_source_wb(attendance_file)
         hris_wb = self.load_hris_wb(hris_file)
