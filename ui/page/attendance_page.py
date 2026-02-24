@@ -11,6 +11,8 @@ from ui.widget.period_date_widget import PeriodDateWidget
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.form_field_group import FormFieldGroup
 from ui.widget.multi_text_field_group import MultiTextFieldGroup
+from ui.widget.loading_dialog import LoadingDialog
+from ui.widget.worker import Worker
 from view_model.attendance_view_model import AttendanceViewModel
 from model.template_model import Template
 from view_model.template_view_model import TemplateViewModel
@@ -108,7 +110,7 @@ class AttendancePage(QWidget):
         # Connect signal to update dropdown automatically
         self.template_vm.templates_changed.connect(self.load_templates_to_dropdown)
         self.load_templates_to_dropdown()
-        
+    
     def load_templates_to_dropdown(self):
         dropdown = self.template_bar.template_dropdown
         dropdown.blockSignals(True)
@@ -234,15 +236,27 @@ class AttendancePage(QWidget):
             QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
             return
         
-        # Extract data using ViewModel
-        try:
-            result = self.attendance_vm.extract_attendance(settings, date_start_str, date_end_str, file)
-            if result.success:
-                QMessageBox.information(self, "Success", "Data extraction completed successfully.")
-            else:
-                QMessageBox.warning(self, "Warning", f"Data extraction failed: {result.message}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")
+        # Show progress dialog
+        self.loading_dialog = LoadingDialog("Extracting data...", self)
+        
+        # Start worker
+        self.worker = Worker(self.attendance_vm.extract_attendance, settings, date_start_str, date_end_str, file)
+        self.worker.finished.connect(self.on_extract_finished)
+        self.worker.error.connect(self.on_extract_error)
+        self.worker.start()
+        
+        self.loading_dialog.show()
+            
+    def on_extract_finished(self, result):
+        self.loading_dialog.close()
+        if result.success:
+            QMessageBox.information(self, "Success", "Data extraction completed successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", f"Data extraction failed: {result.message}")
+    
+    def on_extract_error(self, error_msg):
+        self.loading_dialog.close()
+        QMessageBox.critical(self, "Error", f"An error occurred during extraction: {error_msg}")
             
     def on_compare(self):
         settings = self.collect_settings_from_fields()
@@ -268,13 +282,25 @@ class AttendancePage(QWidget):
         date_start_str = date_start.toString("yyyy-MM-dd")
         date_end_str = date_end.toString("yyyy-MM-dd")
 
-        # Compare data using ViewModel
-        try:
-            result = self.attendance_vm.compare_attendance(settings, date_start_str, date_end_str, attendance_file, hris_file)
-            if result.success:
-                QMessageBox.information(self, "Success", "Data comparison completed successfully.")
-            else:
-                QMessageBox.warning(self, "Warning", f"Data comparison failed: {result.message}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred during comparison: {str(e)}")
+        # Show progress dialog
+        self.loading_dialog = LoadingDialog("Comparing data...", self)
+        
+        # Start worker
+        self.worker = Worker(self.attendance_vm.compare_attendance, settings, date_start_str, date_end_str, attendance_file, hris_file)
+        self.worker.finished.connect(self.on_compare_finished)
+        self.worker.error.connect(self.on_compare_error)
+        self.worker.start()
+        
+        self.loading_dialog.show()
+    
+    def on_compare_finished(self, result):
+        self.loading_dialog.close()
+        if result.success:
+            QMessageBox.information(self, "Success", "Data comparison completed successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", f"Data comparison failed: {result.message}")
+    
+    def on_compare_error(self, error_msg):
+        self.loading_dialog.close()
+        QMessageBox.critical(self, "Error", f"An error occurred during comparison: {error_msg}")
     

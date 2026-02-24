@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
     QMessageBox, QInputDialog
 )
 from PySide6.QtCore import Qt
+from ui.widget.loading_dialog import LoadingDialog
+from ui.widget.worker import Worker
 from model.template_model import Template
 from ui.widget.company_code_checkbox import CompanyCodeCheckbox
 from ui.widget.drop_area_view import DropArea
@@ -229,19 +231,30 @@ class OvertimeOptDrvPage(QWidget):
         date_end_str = date_end.toString("yyyy-MM-dd")
         
         if not file:
-            QMessageBox.warning(self, "Warning", "Please drop an Attendance Excel file.")
+            QMessageBox.warning(self, "Warning", "Please drop an Overtime OPTDRV Excel file.")
             return
         
-        # Extract data using ViewModel
-        try:
-            print(f"Overtime Page: on_extract called with file: {file}")
-            result = self.overtime_vm.extract_overtime(settings, date_start_str, date_end_str, file)
-            if result.success:
-                QMessageBox.information(self, "Success", "Data extraction completed successfully.")
-            else:
-                QMessageBox.warning(self, "Warning", f"Data extraction failed: {result.message}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred during extraction: {str(e)}")
+        # Show progress dialog
+        self.loading_dialog = LoadingDialog("Extracting data...", self)
+        
+        # Start worker
+        self.worker = Worker(self.overtime_vm.extract_overtime, settings, date_start_str, date_end_str, file)
+        self.worker.finished.connect(self.on_extract_finished)
+        self.worker.error.connect(self.on_extract_error)
+        self.worker.start()
+        
+        self.loading_dialog.show()
+    
+    def on_extract_finished(self, result):
+        self.loading_dialog.close()
+        if result.success:
+            QMessageBox.information(self, "Success", "Data extraction completed successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", f"Data extraction failed: {result.message}")
+    
+    def on_extract_error(self, error_msg):
+        self.loading_dialog.close()
+        QMessageBox.critical(self, "Error", f"An error occurred during extraction: {error_msg}")
             
     def on_compare(self):
         settings = self.collect_settings_from_fields()
@@ -267,13 +280,25 @@ class OvertimeOptDrvPage(QWidget):
         date_start_str = date_start.toString("yyyy-MM-dd")
         date_end_str = date_end.toString("yyyy-MM-dd")
 
-        # Compare data using ViewModel
-        try:
-            result = self.overtime_vm.compare_overtime(settings, date_start_str, date_end_str, overtime_file, hris_file)
-            if result.success:
-                QMessageBox.information(self, "Success", "Data comparison completed successfully.")
-            else:
-                QMessageBox.warning(self, "Warning", f"Data comparison failed: {result.message}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred during comparison: {str(e)}")
+        # Show progress dialog
+        self.loading_dialog = LoadingDialog("Comparing data...", self)
+        
+        # Start worker
+        self.worker = Worker(self.overtime_vm.compare_overtime, settings, date_start_str, date_end_str, overtime_file, hris_file)
+        self.worker.finished.connect(self.on_compare_finished)
+        self.worker.error.connect(self.on_compare_error)
+        self.worker.start()
+        
+        self.loading_dialog.show()
+    
+    def on_compare_finished(self, result):
+        self.loading_dialog.close()
+        if result.success:
+            QMessageBox.information(self, "Success", "Data comparison completed successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", f"Data comparison failed: {result.message}")
+    
+    def on_compare_error(self, error_msg):
+        self.loading_dialog.close()
+        QMessageBox.critical(self, "Error", f"An error occurred during comparison: {error_msg}")
     
